@@ -4,11 +4,12 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-    val appName         = "helloworld"
+    val appName         = "MoresbyStroll"
     val appVersion      = "1.0"
 
     val appDependencies = Seq(
       // Add your project dependencies here,
+	    "org.reactivemongo" %% "reactivemongo" % "0.8",
       "mysql" % "mysql-connector-java" % "5.1.21"
     )
 

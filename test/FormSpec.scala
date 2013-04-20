@@ -6,7 +6,7 @@ import play.api.test._
 import play.api.test.Helpers._
 
 class FormSpec extends Specification {
-  
+   /*
   import controllers.Application.helloForm
   
   "HelloWorld form" should {
@@ -85,5 +85,5 @@ class FormSpec extends Specification {
     }
     
   }
-  
+        */
 }

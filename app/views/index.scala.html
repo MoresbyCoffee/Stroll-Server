@@ -1,66 +1,72 @@
-@(helloForm: Form[(String,Int,Option[String])])
+@(message: String)
 
-@import helper._
+@main("Welcome to Play 2.1") {
+    
+    <div id="fb-root"></div>
+	<script>
+        /*
+	  // Additional JS functions here
+	  window.fbAsyncInit = function() {
+	    FB.init({
+	      appId      : '600170073327896', // App ID
+	      channelUrl : '//localhost/assets/channel.html', // Channel File
+	      status     : true, // check login status
+	      cookie     : true, // enable cookies to allow the server to access the session
+	      xfbml      : true  // parse XFBML
+	    });
+	
+	    // Additional init code here
+	    FB.getLoginStatus(function(response) {
+    	  if (response.status === 'connected') {
+    	    // connected
+    	    console.log("Connected");
+    	  } else if (response.status === 'not_authorized') {
+    	    // not_authorized
+    	    console.log("Not auth");
+    	    login();
+    	  } else {
+    	    // not_logged_in
+    	    console.log("Not logged in");
+    	    login();
+    	  }
+    	 });
+	    
+	  };
+	  
+	  function login() {
+		    FB.login(function(response) {
+		        if (response.authResponse) {
+		            // connected
+		        } else {
+		            // cancelled
+		        }
+		    });
+		}
+	
+	  // Load the SDK Asynchronously
+	  (function(d){
+	     var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+	     if (d.getElementById(id)) {return;}
+	     js = d.createElement('script'); js.id = id; js.async = true;
+	     js.src = "//connect.facebook.net/en_US/all.js";
+	     ref.parentNode.insertBefore(js, ref);
+	   }(document));
+          */
 
-@main(title = "The 'helloworld' application") {
+       $(document).ready(function() {
+         console.log(document.location.host)
+         var websocket = new WebSocket("ws://" + document.location.host + "/ws");
+         websocket.onopen = function(evt) {
+            console.log("Connected to the server");
+            websocket.send('{ "auth" : { "id" : "2", "token" : "2" } }');
+            websocket.send('{ "location" : { "longitude" : 1.0, "latitude" : 1.0, "radius" : 1.0 } }');
+         };
+         websocket.onmessage = function(evt) { console.log("Message arrived: " + evt.data); }
+         websocket.onerror = function(evt) { console.error("Error!!!" + evt.data); };
+         websocket.onclose = function(evt) { console.log("DISCONNECTED"); }
 
-    <h1>Configure your 'Hello world':</h1>
-
-    @form(action = routes.Application.sayHello, args = 'id -> "helloform") {
-
-        @inputText(
-            field = helloForm("name"),
-            args = '_label -> "What's your name?", 'placeholder -> "World"
-        )
-
-        @inputText(
-            field = helloForm("repeat"),
-            args = '_label -> "How many times?", 'size -> 3, 'placeholder -> 10
-        )
-
-        @select(
-            field = helloForm("color"), 
-            options = options(
-                "" -> "Default",
-                "red" -> "Red",
-                "green" -> "Green",
-                "blue" -> "Blue"
-            ),
-            args = '_label -> "Choose a color"
-        )
-
-        <p class="buttons">
-            <input type="submit" id="submit">
-        <p>
-        
-
-  <!-- this is used for first time display of clickstart - a template-->
-  <div id="clickstart_content" style="display:none">
-     <p>
-      Congratulations, <a href="#CS_appManageUrl"><span>#CS_appName</span></a>, your <a href="#CS_docUrl"><span>#CS_name</span></a> application is now running.<br />
-      To modify it, take the following steps to clone the source repository:
-    </p>
-
-    <div class="CB_codeSample">
-      git clone #CS_source #CS_appName<br/>
-          cd #CS_appName<br/>
-          ---- do your magic edits ----<br/>
-          git commit -m 'This is now even better !'<br/>
-          git push origin master
-    </div>
-
-    <p>Manage your application components at the following URLs:</p>
-    <ul>
-      <li><strong>Core application:</strong> <a href="#CS_appManageUrl">#CS_appManageUrl</a></li>
-      <li><strong>Database:</strong> <a href="#CS_dbManageUrl">#CS_dbManageUrl</a></li>
-      <li><strong>Jenkins Build System:</strong> <a href="#CS_jenkinsUrl">#CS_jenkinsUrl</a></li>
-    </ul>
-  </div>
-
-  <script type="text/javascript" src="https://s3.amazonaws.com/cloudbees-downloads/clickstart/clickstart_intro.js"></script>
-  <!-- end clickstart intro section -->
-        
-
-    }
-
+       })
+	</script>
+    
+    
 }

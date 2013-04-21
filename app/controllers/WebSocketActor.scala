@@ -29,13 +29,9 @@ class WebSocketActor(val userManager : UserHandler) extends Actor {
         /* Channel has been assigned */
         case Some(ch) =>
           /* process messages */
-          val parsedMessages = parseMessage(jsValue)
-          println(s"ParsedMessage: ${parsedMessages}")
-          val partitionedByAuth = parsedMessages.partition(classOf[Auth].isInstance(_))
-          partitionedByAuth._1.foreach(processInputMessage(_))
-          partitionedByAuth._2.foreach(processInputMessage(_))
-          //ch.push(jsValue)
-
+          val parsedMessage = parseMessage(jsValue)
+          println(s"ParsedMessage: ${parsedMessage}")
+          processInputMessage(parsedMessage)
       }
     case out:OutputMessage =>
       channel match {
@@ -52,7 +48,7 @@ class WebSocketActor(val userManager : UserHandler) extends Actor {
   private def processInputMessage(input : InputMessage) = {
     input match {
       /* Auth message */
-      case Auth(id, token, name) =>
+      case Auth(id, token) =>
         val actor = userManager.getUser(id, token)
         userActor = Some(actor)
         actor ! RegisterActor(self)
@@ -68,7 +64,9 @@ class WebSocketActor(val userManager : UserHandler) extends Actor {
   }
 
   implicit val authRead = Json.reads[Auth]
+  implicit val coordinateRead = Json.reads[Coordinate]
   implicit val locationRead = Json.reads[Location]
+  implicit val coordinateWrite = Json.writes[Coordinate]
   implicit val userLocationWrite  = Json.writes[UserLocation]
   implicit val placeLocationWrite = Json.writes[PlaceLocation]
   implicit val errorMessageWrite  = Json.writes[ErrorMessage]
@@ -81,14 +79,12 @@ class WebSocketActor(val userManager : UserHandler) extends Actor {
     }
   }
 
-  def parseMessage(jsValue : JsValue) : List[InputMessage] = {
-
-    val auth = (jsValue \ "auth").asOpt[Auth]
-    val location = (jsValue \ "location").asOpt[Location]
-    var result : List[InputMessage] = Nil; //List[InputMessage]();
-    auth.foreach{ a => result = a :: result }
-    location.foreach{ a => result = a :: result }
-    return result;
+  def parseMessage(jsValue : JsValue) : InputMessage = {
+    (jsValue \ "type").as[String] match {
+      case "auth" => jsValue.as[Auth]
+      case "loc" => jsValue.as[Location]
+      case typeString => println(s"Type is not supported: ${typeString}"); throw new IllegalArgumentException
+    }
   }
 
 }

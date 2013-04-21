@@ -47,7 +47,7 @@ class DataAccessActor extends Actor {
   val collection = db("places")
 
   def receive = {
-    case UserLocationEvent(_, longitude, latitude, _) =>
+    case UserLocationEvent(_, coord) =>
       implicit val placeReader = PlaceReader
       println("database request sender:" + sender)
 

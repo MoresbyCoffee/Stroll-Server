@@ -58,8 +58,8 @@
          var websocket = new WebSocket("ws://" + document.location.host + "/ws");
          websocket.onopen = function(evt) {
             console.log("Connected to the server");
-            websocket.send('{ "auth" : { "id" : "2", "token" : "2" } }');
-            websocket.send('{ "location" : { "longitude" : 1.0, "latitude" : 1.0, "radius" : 1.0 } }');
+            websocket.send('{ "type" : "auth", "id" : "2", "token" : "2" }');
+            websocket.send('{ "type" : "loc", "coord" : { "lng" : 1.0, "lat" : 1.0 } }');
          };
          websocket.onmessage = function(evt) { console.log("Message arrived: " + evt.data); }
          websocket.onerror = function(evt) { console.error("Error!!!" + evt.data); };

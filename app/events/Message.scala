@@ -7,28 +7,23 @@ case class Coordinate(lng : Double, lat: Double)
 
 sealed trait Message
 trait InputMessage extends Message
-// auth
-// example: { "auth" : { "id" : "blah", "tocken" : "blah" }}
-case class Auth(id: String, token : String) extends InputMessage
-
-trait InputEvent extends InputMessage
 // ??
 // { "type" : "settings", "name" : "Balazs Balazs" , ... }
 case class UserSettings(name : Option[String] = None,
                         radius : Option[Double] = None,
-                        placeCacheSize : Option[Int] = None) extends InputEvent
+                        placeCacheSize : Option[Int] = None) extends InputMessage
 // location => loc
 // example: { "type" : "loc", "lng" : 1.1, "lat" : 1.1 }
-case class Location(coord : Coordinate) extends InputEvent
+case class Location(coord : Coordinate) extends InputMessage
 // disc
 // { "type" : "disc", "id" : "placeId", "payload" : "place secret" }
-case class Discovery(id : String, payload : String) extends InputEvent
+case class Discovery(id : String, payload : String) extends InputMessage
 // bump
 // { "type" : "bump", ... }
-case class Bump(id : String, myPayload : String, herPayload : String)
+case class Bump(id : String, myPayload : String, herPayload : String) extends InputMessage
 // get user info
 // { "type" : "getUser", "id" : "blahblah" }
-case class GetUserInfo(id : String) extends InputEvent
+case class GetUserInfo(id : String) extends InputMessage
 
 trait OutputMessage extends Message
 // { "type" : "userloc", "id": "blahblah", "coord" : { "lng" : 1.1, "lat" : 1.0 } }

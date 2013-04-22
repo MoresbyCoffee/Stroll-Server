@@ -23,10 +23,7 @@ import scala.collection.JavaConversions._
 
 class DataAccessActor extends Actor {
 
-//  val connection = MongoConnection( List( "localhost:27017" ) )
-//  val db = connection("facebook")
   implicit val duration = Duration.apply(30, SECONDS)
-
 
   var url = Play.configuration.getStringList("mongodb.url").get.toList
   var database = Play.configuration.getString("mongodb.database").get

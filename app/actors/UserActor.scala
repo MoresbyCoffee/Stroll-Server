@@ -11,13 +11,13 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
   println(self.path)
 
   var name : String = "testUser"
-  var lastLocation : Option[Coordinate] = None;
-  var websocketActor : Option[ActorRef] = None;
+  var lastLocation : Option[Coordinate] = None
+  var websocketActor : Option[ActorRef] = None
   var radius : Double = 1.0
 
   def receive = {
-    case event : InputEvent =>
-      processInputEvent(event)
+    case inputMessage : InputMessage =>
+      processInputEvent(inputMessage)
       //TODO handle serviceEvents rather than RegisterActor only
     case RegisterActor(actor) =>
       websocketActor = Some(actor)
@@ -46,7 +46,7 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
       lastLocation.foreach { loc =>
         if (((abs(coord.lng - loc.lng)) < radius)
           && ((abs(coord.lat - loc.lat)) < radius)) {
-            f();
+            f()
         }
       }
     }
@@ -55,20 +55,21 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
   private def sendMessage(msg : OutputMessage) {
     websocketActor match {
       case Some(a) => a ! msg
-      case None => println(s"Message lost ${msg}") //TODO append the message to a queue
+      case None => println(s"Message lost $msg") //TODO append the message to a queue
     }
   }
 
-  private def processInputEvent(event : InputEvent) = {
+  private def processInputEvent(event : InputMessage) {
     event match {
       case location : Location =>
         println("Location arrived")
         lastLocation = Some(location.coord)
-        val userLocation = new UserLocationEvent(id, location.coord);
+        val userLocation = new UserLocationEvent(id, location.coord)
         context.system.eventStream.publish(userLocation)
         dalActor ! userLocation
       case _ => println("Unprocessed something")
-        sender ! ErrorMessage(s"Unexpected event: ${event}")
+        sender ! ErrorMessage(s"Unexpected event: $event")
+        //TODO handle all the possibilities
     }
   }
 }

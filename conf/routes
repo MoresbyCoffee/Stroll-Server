@@ -3,8 +3,9 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
-GET     /ws							controllers.WebSocketController.sync
+GET     /                                           controllers.Application.index
+POST    /auth                                       controllers.WebSocketController.auth
+GET     /ws/:sessionId    controllers.WebSocketController.sync(sessionId, sessionToken : String ?= "")
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -55,15 +55,27 @@
 
        $(document).ready(function() {
          console.log(document.location.host)
-         var websocket = new WebSocket("ws://" + document.location.host + "/ws");
-         websocket.onopen = function(evt) {
-            console.log("Connected to the server");
-            websocket.send('{ "type" : "auth", "id" : "2", "token" : "2" }');
-            websocket.send('{ "type" : "loc", "coord" : { "lng" : 1.0, "lat" : 1.0 } }');
-         };
-         websocket.onmessage = function(evt) { console.log("Message arrived: " + evt.data); }
-         websocket.onerror = function(evt) { console.error("Error!!!" + evt.data); };
-         websocket.onclose = function(evt) { console.log("DISCONNECTED"); }
+           $.ajax({
+             url : "/auth",
+             type : 'POST',
+             data : '{ "id" : "1", "token" : "1" }',
+             contentType: 'application/json; charset=utf-8',
+             dataType: 'json',
+             success : function(data) {
+                console.log("Data:", data)
+                var websocket = new WebSocket("ws://" + document.location.host + "/ws/" + data.id + "?sessionToken=" + data.token);
+                websocket.onopen = function(evt) {
+                console.log("Connected to the server");
+                websocket.send('{ "type" : "loc", "coord" : { "lng" : 1.0, "lat" : 1.0 } }');
+                };
+                websocket.onmessage = function(evt) { console.log("Message arrived: " + evt.data); }
+                websocket.onerror = function(evt) { console.error("Error!!!" + evt.data); };
+                websocket.onclose = function(evt) { console.log("DISCONNECTED"); }
+
+
+              },
+             error: function() { console.log("Error") }
+            })
 
        })
 	</script>

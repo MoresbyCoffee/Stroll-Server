@@ -8,3 +8,4 @@ sealed trait WebSocketEvent
 case class AppendChannel(channel : Channel[JsValue]) extends WebSocketEvent
 case class ClientDisconnect() extends WebSocketEvent
 case class ClientMessage(jsValue : JsValue) extends WebSocketEvent
+case class ChannelError(jsValue: JsValue) extends WebSocketEvent

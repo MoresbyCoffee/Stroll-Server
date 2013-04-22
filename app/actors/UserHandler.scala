@@ -13,18 +13,19 @@ class UserHandler(val actorSystem : ActorSystem, val dalActor : ActorRef) {
   val userActors = new HashMap[String, ActorRef] with SynchronizedMap[String, ActorRef]
 
 
-  def getUser(id : String, token : String) : ActorRef = {
+  def getUser(id : String, token : String) : Option[ActorRef] = {
     
-    return userActors.getOrElse(id, {
+    return Some(userActors.getOrElse(id, {
       val actor = actorSystem.actorOf(Props(new UserActor(id, dalActor)))
       actorSystem.eventStream.subscribe(actor, classOf[UserEvent])
       actorSystem.eventStream.subscribe(actor, classOf[Place])
-      return actor
+      actor
     })
+    )
 	  
   }
   
-  private def checkFacebook(id : String, token : String) {
+  private def checkFacebook(id : String, token : String) : Boolean = {
     return true;
   }
   

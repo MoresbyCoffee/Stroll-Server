@@ -9,3 +9,6 @@ tmp
 .classpath
 .project
 .settings
+.target
+bin
+.cache

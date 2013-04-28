@@ -44,40 +44,49 @@ import akka.actor.Actor
 import scala.collection.immutable.List
 import scala.collection.mutable.LinkedList
 
-/** A tiny class that can be used as a Specs2 'context'. */
-abstract class AkkaTestkitSpecs2Support extends TestKit(ActorSystem("testsystem"))
-                                          with After
-                                          with ImplicitSender {
-  // make sure we shut down the actor system after all tests have run
-  def after = system.shutdown()
-}
 
-class MemoryActor extends Actor {
-  var messageList : List[Any] = Nil;
-  
-  def receive = {
-    case message => messageList = message :: messageList
-  }
-}
 
 /** Unit test of UserActor. */
 @RunWith(classOf[JUnitRunner])
-class UserActorTest extends Specification { 
-  
-  "UserActor" should {
-	   "process UserLocation and put a UserLocationEvent onto event bus" in new AkkaTestkitSpecs2Support {
-		   val eventActor = TestActorRef(new MemoryActor)
-		   system.eventStream.subscribe(eventActor, classOf[UserLocationEvent])
+class UserActorTest extends Specification {
 
-		   val dalActor = system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } }))
-		   
-		   val userActor = TestActorRef(new UserActor("userId", dalActor))
-		   userActor ! Location(Coordinate(1.1, 1.1))
-		   
-		   UserLocationEvent("userId", Coordinate(1.1, 1.1)) === eventActor.underlyingActor.messageList(0)
-		   
-	   }  
+  "UserActor" should {
+    "should collect neighbouring information when a new session connects" in {
+      todo
+    }
+    "process UserLocation and put a UserLocationEvent onto event bus" in new AkkaTestkitSpecs2Support {
+      val eventActor = TestActorRef(new MemoryActor)
+      system.eventStream.subscribe(eventActor, classOf[UserLocationEvent])
+
+      val dalActor = system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } }))
+
+      val userActor = TestActorRef(new UserActor("userId", dalActor))
+      userActor ! Location(Coordinate(1.1, 1.1))
+
+      UserLocationEvent("userId", Coordinate(1.1, 1.1)) === eventActor.underlyingActor.messageList(0)
+
+    }
+    "process UserLocation and send a UserLocationEvent to the dal actor" in new AkkaTestkitSpecs2Support {
+      system.eventStream.subscribe(system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } })), classOf[UserLocationEvent])
+
+      val dalActor = TestActorRef(new MemoryActor)
+
+      val userActor = TestActorRef(new UserActor("userId", dalActor))
+      userActor ! Location(Coordinate(1.1, 1.1))
+
+      UserLocationEvent("userId", Coordinate(1.1, 1.1)) === dalActor.underlyingActor.messageList(0)
+
+    }
+    "process Place and send PlaceLocatoin to websocket" in {
+      todo
+    }
+    "process Place and throw away if it is not in range" in {
+      todo
+    }
+    "process Place and queue it up if the websocket is not available" in {
+      //TODO do we want to queue messages in this level?
+      todo
+    }
   }
-  
-  
+
 }

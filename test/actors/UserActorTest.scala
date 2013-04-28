@@ -26,23 +26,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package actors
+
 import akka.testkit.TestActorRef
-import actors.UserActor
-import akka.testkit.TestActor
-import akka.actor.ActorSystem
-import akka.testkit.TestKit
 import events._
 import org.specs2.mutable._
-import org.specs2.mutable.SpecificationWithJUnit
 import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
-import akka.testkit.ImplicitSender
 import akka.actor.Props
-import com.typesafe.config.ConfigFactory
-import akka.testkit.EventFilter
 import akka.actor.Actor
-import scala.collection.immutable.List
-import scala.collection.mutable.LinkedList
+import events.UserLocationEvent
+import org.specs2.runner.JUnitRunner
 
 
 

@@ -26,26 +26,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package actors
+
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import akka.actor.Props
 import akka.testkit.ImplicitSender
-import akka.testkit.TestActor
-import akka.testkit.TestActorRef
 import akka.testkit.TestKit
 import events._
-import org.junit.runner.RunWith
 import org.specs2.mutable._
-import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.runner.JUnitRunner
 import scala.collection.immutable.List
-import scala.collection.mutable.LinkedList
+import com.typesafe.config.ConfigFactory
 
 /** 
  * A tiny class that can be used as a Specs2 'context'.
  * From: [[http://blog.xebia.com/2012/10/01/testing-akka-with-specs2/]]
  */
-abstract class AkkaTestkitSpecs2Support extends TestKit(ActorSystem("testsystem"))
+abstract class AkkaTestkitSpecs2Support extends TestKit({
+  val config = ConfigFactory.empty()
+  ActorSystem("testsystem", config)
+})
   with After
   with ImplicitSender {
   // make sure we shut down the actor system after all tests have run

@@ -5,21 +5,33 @@ import actors.dal.Place
 import reactivemongo.bson.BSONDouble
 import reactivemongo.bson.BSONString
 import actors.dal.Place
+import events.Coordinate
 
 
-import reactivemongo.bson.handlers._
-
-object PlaceReader extends BSONReader[Place] {
-  def fromBSON(document: BSONDocument): Place = {
-    println(s"found document: ${BSONDocument.pretty(document)}")
-
-    val doc = document.toTraversable
-    //      println(s"doc: ${BSONDocument.pretty(doc)} id: ${doc.getAs[BSONObjectID]("_id")} name: ${doc.getAs[BSONString]("name")} ");
-    Place(
-      doc.getAs[BSONObjectID]("_id").get.stringify,
-      doc.getAs[BSONString]("name").get.value,
-      doc.getAs[BSONDouble]("long").get.value,
-      doc.getAs[BSONDouble]("lat").get.value
-    )
-  }
+object PlaceConverter {
+  
+	implicit object PlaceReader extends BSONDocumentReader[Place] {
+	  def read(doc: BSONDocument): Place = {
+	    Place(
+	      doc.getAs[BSONObjectID]("_id").get.stringify,
+	      doc.getAs[BSONString]("name").get.value,
+	      Coordinate(
+	        doc.getAs[BSONDocument]("loc").get.getAs[Double]("lng").get,
+	        doc.getAs[BSONDocument]("loc").get.getAs[Double]("lat").get
+	      )
+	    )
+	  }
+	}
+	
+	implicit object PlaceWriter extends BSONDocumentWriter[Place] {
+	  def write(place : Place) : BSONDocument = {
+	    val bson = BSONDocument("_id" -> BSONObjectID(place.id),
+	    						"name" -> BSONString(place.name),
+	    						"loc" -> BSONDocument(
+	    							"lng" -> BSONDouble(place.loc.lng),
+	    							"lat" -> BSONDouble(place.loc.lat)
+	    						))
+	    bson
+	  }
+	}
 }

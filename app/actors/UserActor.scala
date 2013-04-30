@@ -66,7 +66,7 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
       })
     case place : Place =>
       println("Arrived place:" + place)
-      sendMessage(new PlaceLocation(place.id, place.name, Coordinate(place.longitude, place.latitude)))
+      sendMessage(new PlaceLocation(place.id, place.name, place.loc))
   }
 
   private def ifInRange(id : String, coord : Coordinate, f : () => Unit) {

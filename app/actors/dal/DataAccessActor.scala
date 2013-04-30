@@ -2,15 +2,8 @@ package actors.dal
 
 import akka.actor.Actor
 import events.UserLocationEvent
-
 import reactivemongo.api._
 import reactivemongo.bson._
-import actors.dal.converters.PlaceReader
-
-import reactivemongo.bson.handlers.DefaultBSONHandlers.DefaultBSONDocumentWriter
-import reactivemongo.bson.handlers.DefaultBSONHandlers.DefaultBSONReaderHandler
-
-
 import play.api.libs.iteratee.Iteratee
 import scala.concurrent.ExecutionContext.Implicits.global
 import reactivemongo.core.commands.SuccessfulAuthentication
@@ -20,22 +13,26 @@ import reactivemongo.core.actors.Authenticate
 import play.api.Play.current
 import play.api.Play
 import scala.collection.JavaConversions._
+import com.typesafe.config.ConfigFactory
 
 class DataAccessActor extends Actor {
 
   implicit val duration = Duration.apply(30, SECONDS)
 
-  var url = Play.configuration.getStringList("mongodb.url").get.toList
-  var database = Play.configuration.getString("mongodb.database").get
-  var username = Play.configuration.getString("mongodb.username")
-  var password = Play.configuration.getString("mongodb.password")
+  val config = ConfigFactory.load()
+  
+  var url = config.getStringList("mongodb.url")
+  var database = config.getString("mongodb.database")
+  var username = config.getString("mongodb.username")
+  var password = config.getString("mongodb.password")
 
   println("Conf: " + url)
 
-  val connection = MongoConnection.apply( url )
+  val driver = new MongoDriver
+  val connection = driver.connection( url )
 
-  if (username.isDefined && password.isDefined && username.get != "" && password.get != "") {
-    connection.authenticate(database, username.get, password.get).onSuccess {
+  if (username != "" && password != "") {
+    connection.authenticate(database, username, password).onSuccess {
       case auth => println("authenticated")
     }
   }
@@ -45,18 +42,27 @@ class DataAccessActor extends Actor {
 
   def receive = {
     case UserLocationEvent(_, coord) =>
-      implicit val placeReader = PlaceReader
+      
+      import actors.dal.converters.PlaceConverter._ 
+      
       println("database request sender:" + sender)
 
       val from = sender.path
 
-      val cursor = collection.find(BSONDocument())
+      val cursor = collection.find(BSONDocument()).cursor[Place]
 
       cursor.enumerate.apply(Iteratee.foreach { place =>
-        println("found document: " + place + " sender:" + from)
+        println("%%%%%%%%%%%%%%%55 found document: " + place + " sender:" + from)
         context.actorFor(from) ! place
       })
 
+  }
+  
+  override def postStop() {
+    println("Closing DAL actor")
+    connection.close()
+    driver.close()
+    
   }
 
 }

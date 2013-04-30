@@ -9,10 +9,11 @@ object ApplicationBuild extends Build {
 
     val appDependencies = Seq(
       // Add your project dependencies here,
-	    "org.reactivemongo" %% "reactivemongo" % "0.8",
+	  "org.reactivemongo" %% "reactivemongo" % "0.9",
       "mysql" % "mysql-connector-java" % "5.1.21",
       "org.scalatest" %% "scalatest" % "1.9.1" % "test",
-      "com.typesafe.akka" %% "akka-testkit" % "2.1.0" % "test"
+      "com.typesafe.akka" %% "akka-testkit" % "2.1.0" % "test",
+      "com.github.athieriot" % "specs2-embedmongo_2.9.1" % "0.5" % "test"
     )
 
     val main = play.Project(appName, appVersion, appDependencies).settings(

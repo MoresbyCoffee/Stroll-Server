@@ -42,6 +42,11 @@ import org.specs2.runner.JUnitRunner
 /** Unit test of UserActor. */
 @RunWith(classOf[JUnitRunner])
 class UserActorTest extends Specification {
+  
+  System.setProperty("MONGODB_URL", "localhost:12345")
+  System.setProperty("MONGODB_USERNAME", "")
+  System.setProperty("MONGODB_PASSWORD", "")
+  System.setProperty("MONGODB_DB", "testDatabase")
 
   "UserActor" should {
     "should collect neighbouring information when a new session connects" in {

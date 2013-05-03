@@ -23,7 +23,7 @@ import play.api.test.Helpers._
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class AuthSpec extends Specification {
 
   System.setProperty("MONGODB_URL", "localhost:12345")

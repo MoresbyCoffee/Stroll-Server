@@ -30,6 +30,9 @@ import play.api.Play.current
 import play.api.Play
 import scala.collection.JavaConversions._
 import com.typesafe.config.ConfigFactory
+import actors.dal.PlaceRequest
+import actors.dal.Place
+import events.UserLocationEvent
 
 class DataAccessActor extends Actor {
 
@@ -59,8 +62,8 @@ class DataAccessActor extends Actor {
   def receive = {
     case PlaceRequest(coord, radius) =>
       println(s"Requesting places for $coord with $radius radius")
-
-    case UserLocationEvent(_, coord) =>
+//
+//    case UserLocationEvent(_, coord) =>
       
       import actors.dal.converters.PlaceConverter._ 
       
@@ -68,7 +71,17 @@ class DataAccessActor extends Actor {
 
       val from = sender.path
 
-      val cursor = collection.find(BSONDocument()).cursor[Place]
+      val x1 : Double = coord.lng - radius
+      val y1 : Double = coord.lat - radius
+      val x2 : Double = coord.lng + radius
+      val y2 : Double = coord.lat + radius
+
+
+      val cursor = collection.find(BSONDocument( "loc" -> BSONDocument(
+        "$within" -> BSONDocument(      //GeoWithin doesn't work in tests.
+          "$box" ->  BSONArray( BSONArray( x1, y1), BSONArray( x2, y2 ))
+        )
+      ))).cursor[Place]
 
       cursor.enumerate.apply(Iteratee.foreach { place =>
         println("%%%%%%%%%%%%%%%55 found document: " + place + " sender:" + from)

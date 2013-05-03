@@ -22,6 +22,17 @@ import play.api.libs.json._
 import actors.UserHandler
 import events._
 import common.Coordinate
+import common.Coordinate
+import controllers.ClientDisconnect
+import events.ErrorMessage
+import controllers.ClientMessage
+import events.Location
+import events.PlaceLocation
+import controllers.AppendChannel
+import events.UserLocation
+import scala.Some
+import events.Disconnect
+import controllers.ChannelError
 
 /**
  * Author: Barnabas Sudy
@@ -46,7 +57,9 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
 
   private def processWebSocketEvent(webSocketEvent : WebSocketEvent) = {
     webSocketEvent match {
-      case AppendChannel(ch) => channel = Some(ch)  //TODO run everything from the queue
+      case AppendChannel(ch) =>
+        channel = Some(ch)  //TODO run everything from the queue
+        userActor ! RegisterActor(self)
       case cd : ClientDisconnect =>
         userActor ! Disconnect
         context.stop(self)

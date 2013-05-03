@@ -25,11 +25,11 @@ import akka.actor.Props
 import akka.actor.Actor
 import events.UserLocationEvent
 import org.specs2.runner.JUnitRunner
-
+import actors.dal.PlaceRequest
 
 
 /** Unit test of UserActor. */
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class UserActorTest extends Specification {
   
   System.setProperty("MONGODB_URL", "localhost:12345")
@@ -53,7 +53,7 @@ class UserActorTest extends Specification {
       UserLocationEvent("userId", Coordinate(1.1, 1.1)) === eventActor.underlyingActor.messageList(0)
 
     }
-    "process UserLocation and send a UserLocationEvent to the dal actor" in new AkkaTestkitSpecs2Support {
+    "process UserLocation and send a PlaceRequest to the dal actor" in new AkkaTestkitSpecs2Support {
       system.eventStream.subscribe(system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } })), classOf[UserLocationEvent])
 
       val dalActor = TestActorRef(new MemoryActor)
@@ -61,7 +61,7 @@ class UserActorTest extends Specification {
       val userActor = TestActorRef(new UserActor("userId", dalActor))
       userActor ! Location(Coordinate(1.1, 1.1))
 
-      UserLocationEvent("userId", Coordinate(1.1, 1.1)) === dalActor.underlyingActor.messageList(0)
+      PlaceRequest(Coordinate(1.1, 1.1), 1.0) === dalActor.underlyingActor.messageList(0)
 
     }
     "process Place and send PlaceLocatoin to websocket" in {

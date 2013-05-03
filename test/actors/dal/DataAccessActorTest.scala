@@ -32,11 +32,13 @@ import akka.actor.Props
 import events._
 import scala.concurrent._
 import scala.concurrent.duration._
+import reactivemongo.api.indexes._
+import reactivemongo.api.indexes.IndexType.Geo2D
 
 /**
  * Unit tests for [[actors.dal.DataAccessActor]].
  */
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class DataAccessActorTest extends Specification with EmbedConnection {
   
   System.setProperty("MONGODB_URL", "localhost:12345")
@@ -49,26 +51,42 @@ class DataAccessActorTest extends Specification with EmbedConnection {
     "find places if a user actor requests it" in new AkkaTestkitSpecs2Support {
       import actors.dal.converters.PlaceConverter._
       
-      val driver = new MongoDriver
-      val connection = driver.connection("localhost:12345" :: Nil) 
-      val db = connection("testDatabase")
+      val driver     = new MongoDriver
+      val connection = driver.connection("localhost:12345" :: Nil)
+      val db         = connection("testDatabase")
       val collection = db("places")
       
       val result = collection.insert(Place(BSONObjectID.generate.stringify, "name", Coordinate(1.1, 1.1)))
       val res = Await.result(result, scala.concurrent.duration.DurationInt(15).seconds)
-      println("~~~~~~~~~~~~~~~~~~~~~~~~~~~insert result: " + res)
-      
-//      val cursor = collection.find(BSONDocument()).cursor[Place]
-//      val test = Await.result(cursor.toList, scala.concurrent.duration.DurationInt(15).seconds)
-//      println("~~~~~~~~~~~~~~~~~~~~~~~~~~~test query test: " + test)
+      println("--- insert result:" + res)
+
+      val indexMgr = collection.indexesManager
+      val idx : Index = Index( ("loc", Geo2D) :: Nil)
+      val idxRes = Await.result(indexMgr.ensure(idx) , scala.concurrent.duration.DurationInt(15).seconds)
+      println("--- index result:" + idxRes)
+
+      val cursor = collection.find(BSONDocument()).cursor[BSONDocument]
+
+      cursor.toList.map { list =>
+        list.foreach { doc =>
+          println("found document: " + BSONDocument.pretty(doc))
+        }
+      }
+
+      indexMgr.list().map { list =>
+        list.foreach { index =>
+          println("found index:" + index)
+        }
+      }
 
       
       val dalActor = system.actorOf(Props[DataAccessActor])
       
-      dalActor ! UserLocationEvent("userId", Coordinate(1.1, 1.1))
+      dalActor ! PlaceRequest(Coordinate(1.1, 1.1), 1.0)
       
       println("------------- expectMsg")
-      expectMsgClass(scala.concurrent.duration.DurationInt(30).seconds, classOf[Place]) //(PlaceLocation("12", "name", Coordinate(1.1, 1.1)))
+      expectMsgClass(scala.concurrent.duration.DurationInt(30).seconds, classOf[Place])
+       //(PlaceLocation("12", "name", Coordinate(1.1, 1.1)))
       println("+++++++++++++++++++++++ end expect")
       
       println("closing initial connection")

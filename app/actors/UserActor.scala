@@ -19,7 +19,7 @@ package actors
 import akka.actor.{ActorRef, Actor}
 import events._
 import scala.math._
-import actors.dal.Place
+import actors.dal.{PlaceRequest, Place}
 import common._
 
 
@@ -82,8 +82,9 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
         println("Location arrived")
         lastLocation = Some(location.coord)
         val userLocation = new UserLocationEvent(id, location.coord)
+        val placeRequest = new PlaceRequest(location.coord, radius)
         context.system.eventStream.publish(userLocation)
-        dalActor ! userLocation
+        dalActor ! placeRequest
       case _ => println("Unprocessed something")
         sender ! ErrorMessage(s"Unexpected event: $event")
         //TODO handle all the possibilities

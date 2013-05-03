@@ -5,6 +5,7 @@ import akka.actor._
 import play.api.libs.json._
 import actors.UserHandler
 import events._
+import common.Coordinate
 
 /**
  * Author: Barnabas Sudy

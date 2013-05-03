@@ -5,7 +5,7 @@ import actors.dal.Place
 import reactivemongo.bson.BSONDouble
 import reactivemongo.bson.BSONString
 import actors.dal.Place
-import events.Coordinate
+import common.Coordinate
 
 
 object PlaceConverter {

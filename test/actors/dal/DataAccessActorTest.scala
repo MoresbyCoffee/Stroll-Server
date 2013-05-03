@@ -35,7 +35,7 @@ import org.specs2.runner.JUnitRunner
 import actors.AkkaTestkitSpecs2Support
 import com.github.athieriot.EmbedConnection
 import scala.concurrent.ExecutionContext.Implicits.global
-import events.Coordinate
+import common.Coordinate
 import reactivemongo.api._
 import reactivemongo.bson._
 import play.api.Play.current

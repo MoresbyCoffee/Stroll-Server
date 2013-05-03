@@ -41,6 +41,9 @@ class DataAccessActor extends Actor {
   val collection = db("places")
 
   def receive = {
+    case PlaceRequest(coord, radius) =>
+      println(s"Requesting places for $coord with $radius radius")
+
     case UserLocationEvent(_, coord) =>
       
       import actors.dal.converters.PlaceConverter._ 

@@ -32,6 +32,7 @@ import akka.actor.{ActorRef, Actor}
 import events._
 import scala.math._
 import actors.dal.Place
+import common._
 
 
 class UserActor(val id : String, val dalActor : ActorRef) extends Actor {

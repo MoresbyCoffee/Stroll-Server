@@ -1,9 +1,8 @@
 package events
 
 import akka.actor.ActorRef
+import common.Coordinate
 
-
-case class Coordinate(lng : Double, lat: Double)
 
 sealed trait Message
 trait InputMessage extends Message

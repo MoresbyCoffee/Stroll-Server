@@ -4,15 +4,46 @@ import org.specs2.mutable._
 
 import play.api.test._
 import play.api.test.Helpers._
+import org.junit.runner.RunWith
+import org.specs2.runner.JUnitRunner
 
-class IntegrationSpec extends Specification {
-  
-  /*
+@RunWith(classOf[JUnitRunner])
+class AuthSpec extends Specification {
+
+  System.setProperty("MONGODB_URL", "localhost:12345")
+  System.setProperty("MONGODB_USERNAME", "")
+  System.setProperty("MONGODB_PASSWORD", "")
+  System.setProperty("MONGODB_DB", "testDatabase")
+
   "Application" should {
 
+      "should authenticate" in {
+        running(TestServer(3333)) {
+
+          import scalaj.http._
+
+          val result = Http.postData("http://localhost:3333/auth", """{"id":"12","token":"data"}""")
+            .header("Content-Type", "application/json")
+            .header("Charset", "UTF-8")
+            .option(HttpOptions.readTimeout(10000))
+            .asString
+
+          import play.api.libs.json._
+
+          val jsonResult: JsValue = Json.parse(result)
+          val sessionId    = (jsonResult \ "id").asOpt[String]
+          val sessionToken = (jsonResult \ "token").asOpt[String]
+
+          println("^^^^^^^^^^^^^^^^^^^ " + result);
+
+          sessionId.isDefined must beTrue
+          sessionToken.isDefined must beTrue
+
+        }
+      }
+
     
-    
-    "work from within a browser" in {
+/*    "work from within a browser" in {
         
       running(TestServer(3333), HTMLUNIT) { browser =>
         browser.goTo("http://localhost:3333/")
@@ -61,9 +92,9 @@ class IntegrationSpec extends Specification {
          
       }
     }
-
+*/
     
   }
-  */
+
   
 }

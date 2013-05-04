@@ -18,16 +18,16 @@ package actors.dal
 
 import common.Coordinate
 
-/**
- * Created with IntelliJ IDEA.
- * User: envagyok
- * Date: 2013.04.30.
- * Time: 21:52
- * To change this template use File | Settings | File Templates.
- */
+/** Actor messages used to access [[actors.dal.DataAccessActor]] and receive
+  * result from it.
+  */
 sealed trait DataAccessMessage
 
+/** Trait for the Data Request Messages used for requesting data. */
 trait DataAccessRequestMessage extends DataAccessMessage
+/** Trait for Data Response Message used by [[actors.dal.DataAccessActor]]
+  * to send back result to the requester.
+  */
 trait DataAccessResponseMessage extends DataAccessMessage
 
 case class PlaceRequest(loc:Coordinate, distance:Double) extends DataAccessRequestMessage

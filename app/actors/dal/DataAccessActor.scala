@@ -16,40 +16,40 @@
  */
 package actors.dal
 
-import akka.actor.Actor
-import events.UserLocationEvent
+import akka.actor.{ActorPath, Actor}
 import reactivemongo.api._
 import reactivemongo.bson._
 import play.api.libs.iteratee.Iteratee
 import scala.concurrent.ExecutionContext.Implicits.global
-import reactivemongo.core.commands.SuccessfulAuthentication
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit._
-import reactivemongo.core.actors.Authenticate
 import play.api.Play.current
 import play.api.Play
 import scala.collection.JavaConversions._
 import com.typesafe.config.ConfigFactory
-import actors.dal.PlaceRequest
-import actors.dal.Place
-import events.UserLocationEvent
 
+/**
+ * Responsible to serve the data requests. This actor uses ReactiveMongo
+ * to gain to MongoDB. It is enough to use only one DataAccessActor because
+ * ReactiveMongo handles the requests asynchronously.
+ */
 class DataAccessActor extends Actor {
 
   implicit val duration = Duration.apply(30, SECONDS)
 
+  /* Loading configuration */
   val config = ConfigFactory.load()
   
-  var url = config.getStringList("mongodb.url")
+  var url      = config.getStringList("mongodb.url")
   var database = config.getString("mongodb.database")
   var username = config.getString("mongodb.username")
   var password = config.getString("mongodb.password")
 
-  println("Conf: " + url)
-
+  /* Database connection */
   val driver = new MongoDriver
   val connection = driver.connection( url )
 
+  /* Authentication */
   if (username != "" && password != "") {
     connection.authenticate(database, username, password).onSuccess {
       case auth => println("authenticated")
@@ -62,12 +62,8 @@ class DataAccessActor extends Actor {
   def receive = {
     case PlaceRequest(coord, radius) =>
       println(s"Requesting places for $coord with $radius radius")
-//
-//    case UserLocationEvent(_, coord) =>
-      
-      import actors.dal.converters.PlaceConverter._ 
-      
-      println("database request sender:" + sender)
+
+      import actors.dal.converters.PlaceConverter._
 
       val from = sender.path
 
@@ -76,19 +72,17 @@ class DataAccessActor extends Actor {
       val x2 : Double = coord.lng + radius
       val y2 : Double = coord.lat + radius
 
-
       val cursor = collection.find(BSONDocument( "loc" -> BSONDocument(
         "$within" -> BSONDocument(      //GeoWithin doesn't work in tests.
           "$box" ->  BSONArray( BSONArray( x1, y1), BSONArray( x2, y2 ))
         )
       ))).cursor[Place]
 
-      cursor.enumerate.apply(Iteratee.foreach { place =>
-        println("%%%%%%%%%%%%%%%55 found document: " + place + " sender:" + from)
-        context.actorFor(from) ! place
-      })
+      cursor.enumerate.apply(Iteratee.foreach(responseHandler(from)))
 
   }
+
+  private[this] def responseHandler(fromPath : ActorPath) : (Place) => Unit = { place : Place => context.actorFor(fromPath) ! place }
   
   override def postStop() {
     println("Closing DAL actor")

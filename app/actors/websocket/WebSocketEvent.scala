@@ -11,7 +11,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Moresby Stroll Server.
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 package actors.websocket
 
@@ -27,7 +28,7 @@ sealed trait WebSocketEvent
 case class AppendChannel(channel : Channel[JsValue]) extends WebSocketEvent
 /** Service message - the client has disconnected, do not send messages. */
 case class ClientDisconnect() extends WebSocketEvent
-/** Service message - Error happend in the channel, do not send messages. */
+/** Service message - Error happened in the channel, do not send messages. */
 case class ChannelError(jsValue: JsValue) extends WebSocketEvent
 /** Wrapper for messages from the client. */
 case class ClientMessage(jsValue : JsValue) extends WebSocketEvent

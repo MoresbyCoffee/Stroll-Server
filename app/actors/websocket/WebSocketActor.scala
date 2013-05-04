@@ -89,7 +89,17 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
   implicit val locationRead       = Json.reads[Location]
   implicit val coordinateWrite    = Json.writes[Coordinate]
   implicit val userLocationWrite  = Json.writes[UserLocation]
-  implicit val placeLocationWrite = Json.writes[PlaceLocation]
+  implicit val placeLocationWrite = new Writes[PlaceLocation] {
+    def writes(place : PlaceLocation) : JsValue = {
+      Json.obj(
+        "name" -> place.name,
+        "id"   -> place.id,
+        "type" -> "place",
+        "loc"  -> place.coord
+      )
+    }
+
+  }
   implicit val errorMessageWrite  = Json.writes[ErrorMessage]
 
   private def toMessage(msg : OutputMessage) : JsValue = {

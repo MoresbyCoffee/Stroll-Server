@@ -73,7 +73,7 @@ abstract class AkkaTestkitSpecs2Support extends TestKit({
 //}
 
 /**
- * Special [[Actor]] what records all the incoming messages in the messageList. 
+ * Special [[akka.actor.Actor]] what records all the incoming messages in the messageList.
  */
 class MemoryActor extends Actor {
   var messageList: List[Any] = Nil;
@@ -82,3 +82,4 @@ class MemoryActor extends Actor {
     case message => messageList = message :: messageList
   }
 }
+

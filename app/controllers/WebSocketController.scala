@@ -32,6 +32,7 @@ import actors.dal.DataAccessActor
 import scala.util.Random
 import scala.collection.mutable.{SynchronizedMap, HashMap}
 import org.apache.commons.codec.binary.Base64.decodeBase64
+import actors.websocket._
 
 
 object WebSocketController extends Controller {

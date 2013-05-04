@@ -14,35 +14,28 @@
  * along with Moresby Stroll Server.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-package controllers
+package actors.websocket
 
 import play.api.libs.iteratee.Concurrent.Channel
 import akka.actor._
 import play.api.libs.json._
 import actors.UserHandler
 import events._
-import common.Coordinate
-import common.Coordinate
-import controllers.ClientDisconnect
-import events.ErrorMessage
-import controllers.ClientMessage
-import events.Location
-import events.PlaceLocation
-import controllers.AppendChannel
-import events.UserLocation
 import scala.Some
-import events.Disconnect
-import controllers.ChannelError
+import common.Coordinate
 
 /**
- * Author: Barnabas Sudy
+ * This actor is responsible to handle the JSON request
+ * arrived from the client and to send messages to the client.
  */
 class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessionToken : String) extends Actor {
 
   var channel : Option[Channel[JsValue]] = None;
 
   def receive = {
+    /* Messages from the WebSocket (from the client) */
     case wse : WebSocketEvent => processWebSocketEvent(wse)
+    /* Messages from the Business Logic */
     case out : OutputMessage =>
       channel match {
         case Some(ch) =>
@@ -55,31 +48,35 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
     case a => println(s"unprocessed event ${a}")
   }
 
+  /** Handles the WebSocket events.
+    * All the messages arriving from the WebSocket - even the client messages -
+    * wrapped into a [[actors.websocket.WebSocketEvent]].
+    *
+    * @param webSocketEvent The - service or client - message from the WebSocket
+    */
   private def processWebSocketEvent(webSocketEvent : WebSocketEvent) = {
     webSocketEvent match {
+      /* Service Message handler */
       case AppendChannel(ch) =>
         channel = Some(ch)  //TODO run everything from the queue
         userActor ! RegisterActor(self)
       case cd : ClientDisconnect =>
         userActor ! Disconnect
         context.stop(self)
-      case ClientMessage(jsValue) =>
-        println("JavaScript message arrived")
-        channel match {
-          /* No channel assigned yes */
-          case None => println("The channel is not ready yet") //TODO queue the messages
-          /* Channel has been assigned */
-          case Some(ch) =>
-            /* process messages */
-            val parsedMessage = parseMessage(jsValue)
-            println(s"ParsedMessage: ${parsedMessage}")
-            processInputMessage(parsedMessage)
-        }
       case ChannelError(jsValue) =>
         //TODO put back to the queue.
         println(s"Channel error: Channel is set to None")
         channel = None;
         //TODO start timer and close this in 3 mins if there is no new message from the client.
+
+      /* Client Message handler */
+      case ClientMessage(jsValue) =>
+        println("JavaScript message arrived")
+        /* parsing json message */
+        val parsedMessage = parseMessage(jsValue)
+        println(s"ParsedMessage: ${parsedMessage}")
+        /* processing client message */
+        processInputMessage(parsedMessage)
     }
 
   }
@@ -88,18 +85,21 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
     userActor ! input
   }
 
-  implicit val coordinateRead = Json.reads[Coordinate]
-  implicit val locationRead = Json.reads[Location]
-  implicit val coordinateWrite = Json.writes[Coordinate]
+  implicit val coordinateRead     = Json.reads[Coordinate]
+  implicit val locationRead       = Json.reads[Location]
+  implicit val coordinateWrite    = Json.writes[Coordinate]
   implicit val userLocationWrite  = Json.writes[UserLocation]
   implicit val placeLocationWrite = Json.writes[PlaceLocation]
   implicit val errorMessageWrite  = Json.writes[ErrorMessage]
 
   private def toMessage(msg : OutputMessage) : JsValue = {
     msg match {
-      case userLoc : UserLocation => Json.toJson(userLoc)
-      case placeLoc : PlaceLocation => Json.toJson(placeLoc)
-      case error : ErrorMessage => Json.toJson(error)
+      case userLoc : UserLocation =>
+        Json.toJson(userLoc)
+      case placeLoc : PlaceLocation =>
+        Json.toJson(placeLoc)
+      case error : ErrorMessage =>
+        Json.toJson(error)
     }
   }
 

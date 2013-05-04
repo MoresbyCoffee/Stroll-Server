@@ -11,17 +11,24 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Moresby Stroll Server.
- * If not, see <http://www.gnu.org/licenses/>.
+ * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-package controllers
+package actors.websocket
 
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.JsValue
 
+/**
+ * Actor messages for the WebSocket to indicate some events to [[actors.websocket.WebSocketActor]].
+ */
 sealed trait WebSocketEvent
 
+/** Service message - a channel is ready to use. */
 case class AppendChannel(channel : Channel[JsValue]) extends WebSocketEvent
+/** Service message - the client has disconnected, do not send messages. */
 case class ClientDisconnect() extends WebSocketEvent
-case class ClientMessage(jsValue : JsValue) extends WebSocketEvent
+/** Service message - Error happend in the channel, do not send messages. */
 case class ChannelError(jsValue: JsValue) extends WebSocketEvent
+/** Wrapper for messages from the client. */
+case class ClientMessage(jsValue : JsValue) extends WebSocketEvent
+

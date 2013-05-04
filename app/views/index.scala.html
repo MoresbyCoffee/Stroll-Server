@@ -3,6 +3,7 @@
 @main("Moresby Stroll") {
 
     <div id="fb-root"></div>
+    <div id="demoMap" style="height:550px"></div>
 	<script>
         /*
 	  // Additional JS functions here
@@ -53,32 +54,93 @@
 	   }(document));
           */
 
-       $(document).ready(function() {
-         console.log(document.location.host)
-           $.ajax({
-             url : "/auth",
-             type : 'POST',
-             data : '{ "id" : "1", "token" : "1" }',
-             contentType: 'application/json; charset=utf-8',
-             dataType: 'json',
-             success : function(data) {
-                console.log("Data:", data)
-                var websocket = new WebSocket("ws://" + document.location.host + "/ws/" + data.id + "?sessionToken=" + data.token);
-                websocket.onopen = function(evt) {
-                console.log("Connected to the server");
-                websocket.send('{ "type" : "loc", "coord" : { "lng" : 1.0, "lat" : 1.0 } }');
+
+
+
+        $(document).ready(function() {
+
+            var websocket;
+
+            function processServerMessage(jsonMsg) {
+                var msg = JSON.parse(msg);
+                console.log("Message arrived: " + msg);
+            }
+
+            function openWebsocket(sessionId, sessionToken) {
+                websocket = new WebSocket("ws://" + document.location.host + "/ws/" + sessionId + "?sessionToken=" + sessionToken);
+                    websocket.onopen = function(evt) {
+                        console.log("Connected to the server");
                 };
-                websocket.onmessage = function(evt) { console.log("Message arrived: " + evt.data); }
-                websocket.onerror = function(evt) { console.error("Error!!!" + evt.data); };
-                websocket.onclose = function(evt) { console.log("DISCONNECTED"); }
+                websocket.onmessage = function(evt) {
+                    processServerMessage(evt.data);
+                };
+                websocket.onerror = function(evt) {
+                    console.error("Error!!!" + evt.data);
+                };
+                websocket.onclose = function(evt) {
+                    console.log("DISCONNECTED");
+                }
+            }
+
+            function sendLocation(lng, lat) {
+                if (typeof websocket != undefined) {
+                    if (websocket.readyState == 1) {
+                        var msg = '{ "type" : "loc", "coord" : { "lng" : ' + lng + ', "lat" : ' + lat + '} }';
+                        console.log("Message: " + msg);
+                        websocket.send(msg);
+                    }
+                }
+            }
+
+            $.ajax({
+                url : "/auth",
+                type : 'POST',
+                data : '{ "id" : "1", "token" : "1" }',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success : function(data) {
+                    console.log("Data:", data);
+                    openWebsocket(data.id, data.token);
+                },
+                error: function() {
+                    console.log("Error");
+                }
+            });
 
 
-              },
-             error: function() { console.log("Error") }
-            })
 
-       })
-	</script>
 
+
+            var map = new OpenLayers.Map("demoMap");
+            map.addLayer(new OpenLayers.Layer.OSM());
+
+            var markers = new OpenLayers.Layer.Markers( "Markers" );
+            map.addLayer(markers);
+
+            //map.zoomToMaxExtent();
+            function errorHandler(err) {
+                if(err.code == 1) {
+                    alert("Error: Access is denied!");
+                }else if( err.code == 2) {
+                    alert("Error: Position is unavailable!");
+                }
+            }
+
+            function showLocation(position) {
+                var latitude = position.coords.latitude;
+                var longitude = position.coords.longitude;
+                console.log("Latitude : " + latitude + " Longitude: " + longitude);
+                var lonLat = new OpenLayers.LonLat(longitude, latitude).transform(
+                    new OpenLayers.Projection("EPSG:4326"), //transform from WGS 1984
+                    map.getProjectionObject() //to Spherical Mercator Projection
+                );
+                markers.addMarker(new OpenLayers.Marker(lonLat));
+                map.setCenter(lonLat, 14 /* Zoom level */ );
+                sendLocation(longitude, latitude);
+            }
+
+            var watchId = navigator.geolocation.watchPosition(showLocation, errorHandler, {timeout:60000});
+        });
+    </script>
     
 }

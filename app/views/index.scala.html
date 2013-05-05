@@ -5,65 +5,64 @@
     <div id="fb-root"></div>
     <div id="demoMap" style="height:550px"></div>
 	<script>
-        /*
-	  // Additional JS functions here
-	  window.fbAsyncInit = function() {
-	    FB.init({
-	      appId      : '600170073327896', // App ID
-	      channelUrl : '//localhost/assets/channel.html', // Channel File
-	      status     : true, // check login status
-	      cookie     : true, // enable cookies to allow the server to access the session
-	      xfbml      : true  // parse XFBML
-	    });
-	
-	    // Additional init code here
-	    FB.getLoginStatus(function(response) {
-    	  if (response.status === 'connected') {
-    	    // connected
-    	    console.log("Connected");
-    	  } else if (response.status === 'not_authorized') {
-    	    // not_authorized
-    	    console.log("Not auth");
-    	    login();
-    	  } else {
-    	    // not_logged_in
-    	    console.log("Not logged in");
-    	    login();
-    	  }
-    	 });
-	    
-	  };
-	  
-	  function login() {
-		    FB.login(function(response) {
-		        if (response.authResponse) {
-		            // connected
-		        } else {
-		            // cancelled
-		        }
-		    });
-		}
-	
-	  // Load the SDK Asynchronously
-	  (function(d){
-	     var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
-	     if (d.getElementById(id)) {return;}
-	     js = d.createElement('script'); js.id = id; js.async = true;
-	     js.src = "//connect.facebook.net/en_US/all.js";
-	     ref.parentNode.insertBefore(js, ref);
-	   }(document));
-          */
-
-
-
 
         $(document).ready(function() {
 
             var websocket;
 
             function processServerMessage(jsonMsg) {
-                var msg = JSON.parse(msg);
-                console.log("Message arrived: " + msg);
+                console.log("Message arrived: " + jsonMsg);
+                var msg = JSON.parse(jsonMsg);
+                console.log(msg);
+                console.log(msg['type']);
+                console.log(typeof msg['type']);
+                if (typeof msg['type'] == 'string') {
+                    switch (msg['type']) {
+                        case "place" :
+                            displayPlace(msg);
+                            break;
+                        default : alert("Unexpected message: " + jsonMsg);
+                    }
+                } else {
+                    alert("Unexpected message: " + jsonMsg);
+                }
+            }
+
+            var markerStore = {};
+
+            function displayPlace(place) {
+                if (markerStore[place.id]) {
+                    console.log("Already displayed");
+                } else {
+                    var latitude = place.loc.lat;
+                    var longitude = place.loc.lng;
+                    console.log("Place Latitude : " + latitude + " Longitude: " + longitude);
+                    var lonLat = new OpenLayers.LonLat(longitude, latitude).transform(
+                        new OpenLayers.Projection("EPSG:4326"), //transform from WGS 1984
+                        map.getProjectionObject() //to Spherical Mercator Projection
+                    );
+
+                    var size = new OpenLayers.Size(21,25);
+                    var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+                    var icon = new OpenLayers.Icon('/assets/javascripts/img/marker-blue.png', size, offset);
+                    var placeMarker = new OpenLayers.Marker(lonLat, icon);
+
+                    markers.addMarker(placeMarker);
+                    markerStore[place.id] = placeMarker;
+/**
+                    placeMarker.events.register("click", placeMarker, function(e) {
+                        var popup = new OpenLayers.Popup(
+                            "chicken",
+                            lonLat, //map.getLonLatFromPixel(e.xy),
+                            new OpenLayers.Size(200,200),
+                            "example popup",
+                            placeMarker,
+                            true);
+                        map.addPopup(popup);
+                    });
+*/
+                }
+
             }
 
             function openWebsocket(sessionId, sessionToken) {
@@ -83,7 +82,7 @@
             }
 
             function sendLocation(lng, lat) {
-                if (typeof websocket != undefined) {
+                if (typeof websocket != "undefined") {
                     if (websocket.readyState == 1) {
                         var msg = '{ "type" : "loc", "coord" : { "lng" : ' + lng + ', "lat" : ' + lat + '} }';
                         console.log("Message: " + msg);
@@ -111,7 +110,7 @@
 
 
 
-            var map = new OpenLayers.Map("demoMap");
+            map = new OpenLayers.Map("demoMap");
             map.addLayer(new OpenLayers.Layer.OSM());
 
             var markers = new OpenLayers.Layer.Markers( "Markers" );
@@ -126,7 +125,9 @@
                 }
             }
 
+            var myMarker;
             function showLocation(position) {
+
                 var latitude = position.coords.latitude;
                 var longitude = position.coords.longitude;
                 console.log("Latitude : " + latitude + " Longitude: " + longitude);
@@ -134,13 +135,71 @@
                     new OpenLayers.Projection("EPSG:4326"), //transform from WGS 1984
                     map.getProjectionObject() //to Spherical Mercator Projection
                 );
-                markers.addMarker(new OpenLayers.Marker(lonLat));
+
+                if (myMarker) {
+                    markers.removeMarker(myMarker);
+                }
+                myMarker = new OpenLayers.Marker(lonLat);
+                markers.addMarker(myMarker);
+
+
                 map.setCenter(lonLat, 14 /* Zoom level */ );
                 sendLocation(longitude, latitude);
             }
 
             var watchId = navigator.geolocation.watchPosition(showLocation, errorHandler, {timeout:60000});
         });
+
+
+        /*
+        // Additional JS functions here
+        window.fbAsyncInit = function() {
+        FB.init({
+        appId      : '600170073327896', // App ID
+        channelUrl : '//localhost/assets/channel.html', // Channel File
+        status     : true, // check login status
+        cookie     : true, // enable cookies to allow the server to access the session
+        xfbml      : true  // parse XFBML
+        });
+
+        // Additional init code here
+        FB.getLoginStatus(function(response) {
+        if (response.status === 'connected') {
+        // connected
+        console.log("Connected");
+        } else if (response.status === 'not_authorized') {
+        // not_authorized
+        console.log("Not auth");
+        login();
+        } else {
+        // not_logged_in
+        console.log("Not logged in");
+        login();
+        }
+        });
+
+        };
+
+        function login() {
+        FB.login(function(response) {
+        if (response.authResponse) {
+        // connected
+        } else {
+        // cancelled
+        }
+        });
+        }
+
+        // Load the SDK Asynchronously
+        (function(d){
+        var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+        if (d.getElementById(id)) {return;}
+        js = d.createElement('script'); js.id = id; js.async = true;
+        js.src = "//connect.facebook.net/en_US/all.js";
+        ref.parentNode.insertBefore(js, ref);
+        }(document));
+        */
+
     </script>
     
 }

@@ -67,10 +67,10 @@ class DataAccessActorTest extends Specification with EmbedConnection {
       val collection = db("places")
       
       val insertResult = collection.insert(Place(BSONObjectID.generate.stringify, "name", Coordinate(1.1, 1.1)))
-      Await.result(insertResult, scala.concurrent.duration.DurationInt(15).seconds)
+      Await.result(insertResult, DurationInt(15).seconds)
 
       val idx : Index = Index( ("loc", Geo2D) :: Nil)
-      Await.result(collection.indexesManager.ensure(idx) , scala.concurrent.duration.DurationInt(15).seconds)
+      Await.result(collection.indexesManager.ensure(idx) , DurationInt(15).seconds)
 
       /* Creating subject */
       val dalActor = system.actorOf(Props[DataAccessActor])
@@ -79,7 +79,7 @@ class DataAccessActorTest extends Specification with EmbedConnection {
       dalActor ! PlaceRequest(Coordinate(1.1, 1.1), 1.0)
 
       /* Assertion */
-      val result = expectMsgClass(scala.concurrent.duration.DurationInt(30).seconds, classOf[Place])
+      val result = expectMsgClass(DurationInt(30).seconds, classOf[Place])
       result.loc === Coordinate(1.1, 1.1)
       result.name === "name"
 

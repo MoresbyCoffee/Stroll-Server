@@ -35,15 +35,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import common.Coordinate
 import reactivemongo.api._
 import reactivemongo.bson._
-import play.api.Play.current
-import play.api.Play
-import scala.collection.JavaConversions._
 import akka.actor.Props
-import events._
 import scala.concurrent._
 import scala.concurrent.duration._
 import reactivemongo.api.indexes._
 import reactivemongo.api.indexes.IndexType.Geo2D
+import reactivemongo.api.collections.default.BSONCollection
 
 /**
  * Unit tests for [[actors.dal.DataAccessActor]].
@@ -64,7 +61,7 @@ class DataAccessActorTest extends Specification with EmbedConnection {
       val driver     = new MongoDriver
       val connection = driver.connection("localhost:12345" :: Nil)
       val db         = connection("testDatabase")
-      val collection = db("places")
+      val collection = db.collection[BSONCollection]("places")
       
       val insertResult = collection.insert(Place(BSONObjectID.generate.stringify, "name", Coordinate(1.1, 1.1)))
       Await.result(insertResult, DurationInt(15).seconds)

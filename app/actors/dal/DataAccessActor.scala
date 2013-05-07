@@ -27,6 +27,7 @@ import play.api.Play.current
 import play.api.Play
 import scala.collection.JavaConversions._
 import com.typesafe.config.ConfigFactory
+import reactivemongo.api.collections.default.BSONCollection
 
 /**
  * Responsible to serve the data requests. This actor uses ReactiveMongo
@@ -57,7 +58,7 @@ class DataAccessActor extends Actor {
   }
 
   val db = connection(database)
-  val collection = db("places")
+  val collection = db.collection[BSONCollection]("places")
 
   def receive = {
     case PlaceRequest(coord, radius) =>
@@ -78,11 +79,11 @@ class DataAccessActor extends Actor {
         )
       ))).cursor[Place]
 
-      cursor.enumerate.apply(Iteratee.foreach(responseHandler(from)))
+      cursor.enumerate.apply(Iteratee.foreach(getResponseHandler(from)))
 
   }
 
-  private[this] def responseHandler(fromPath : ActorPath) : (Place) => Unit = { place : Place => context.actorFor(fromPath) ! place }
+  private[this] def getResponseHandler(fromPath : ActorPath) : (Place) => Unit = { place : Place => context.actorFor(fromPath) ! place }
   
   override def postStop() {
     println("Closing DAL actor")

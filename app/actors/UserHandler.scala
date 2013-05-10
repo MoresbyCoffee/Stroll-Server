@@ -22,27 +22,42 @@ import events._
 import scala.collection.mutable.{HashMap, SynchronizedMap}
 import akka.actor.Props
 import akka.actor.ActorRef
+import com.typesafe.config.ConfigFactory
+import org.moresbycoffee.facebook.Facebook._
 import actors.dal.Place
+import scala.Some
 
 class UserHandler(val actorSystem : ActorSystem, val dalActor : ActorRef) {
 
   val userActors = new HashMap[String, ActorRef] with SynchronizedMap[String, ActorRef]
 
+  /* Loading configuration */
+  val config = ConfigFactory.load()
+
+  val APP_ID = config.getString("facebook.app_id")
+  val APP_SECRET = config.getString("facebook.app_secret")
+
+  implicit val appConfig = FBAppConfig(APP_ID, APP_SECRET)
+  implicit val accessToken = getAccessToken
+
 
   def getUser(id : String, token : String) : Option[ActorRef] = {
-    
-    return Some(userActors.getOrElse(id, {
-      val actor = actorSystem.actorOf(Props(new UserActor(id, dalActor)))
-      actorSystem.eventStream.subscribe(actor, classOf[UserEvent])
-      actorSystem.eventStream.subscribe(actor, classOf[Place])
-      actor
-    })
-    )
-	  
+    if (checkUser(id, token)) {
+      Some(userActors.getOrElse(id, {
+        val actor = actorSystem.actorOf(Props(new UserActor(id, dalActor)))
+        actorSystem.eventStream.subscribe(actor, classOf[UserEvent])
+        actorSystem.eventStream.subscribe(actor, classOf[Place])
+        actor
+      }))
+    } else {
+      None
+    }
+
+
   }
   
   private def checkFacebook(id : String, token : String) : Boolean = {
-    return true;
+    return checkUser(id, token);
   }
   
 }

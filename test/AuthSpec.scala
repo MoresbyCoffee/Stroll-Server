@@ -20,10 +20,12 @@ import org.specs2.mutable._
 
 import play.api.test._
 import play.api.test.Helpers._
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
+import com.typesafe.config.ConfigFactory
+import scalaj.http._
+import play.api.libs.json._
+import org.moresbycoffee.facebook.Facebook._
 
-//@RunWith(classOf[JUnitRunner])
+/** Tests the authentication. */
 class AuthSpec extends Specification {
 
   System.setProperty("MONGODB_URL", "localhost:12345")
@@ -31,22 +33,36 @@ class AuthSpec extends Specification {
   System.setProperty("MONGODB_PASSWORD", "")
   System.setProperty("MONGODB_DB", "testDatabase")
 
+
+  /* Loading configuration */
+  val config = ConfigFactory.load()
+
+  val APP_ID = config.getString("facebook.app_id")
+  val APP_SECRET = config.getString("facebook.app_secret")
+
+  implicit val appConfig = FBAppConfig(APP_ID, APP_SECRET)
+  implicit val accessToken = getAccessToken
+
   "Application" should {
 
       "should authenticate" in {
         running(TestServer(3333)) {
 
-          import scalaj.http._
+          val facebookUser = getPredefinedTestUser.get
 
-          val result = Http.postData("http://localhost:3333/auth", """{"id":"12","token":"data"}""")
+          println(s"^^^^^^^^^^^^^^^^^^^ facebookUser: $facebookUser")
+          println("User check: " + checkUser(facebookUser.id, facebookUser.access_token))
+
+
+          val result = Http.postData("http://localhost:3333/auth", s"""{"id":"${facebookUser.id}","token":"${facebookUser.access_token}"}""")
             .header("Content-Type", "application/json")
             .header("Charset", "UTF-8")
             .option(HttpOptions.readTimeout(10000))
             .asString
 
-          import play.api.libs.json._
 
           val jsonResult: JsValue = Json.parse(result)
+
           val sessionId    = (jsonResult \ "id").asOpt[String]
           val sessionToken = (jsonResult \ "token").asOpt[String]
 
@@ -58,6 +74,19 @@ class AuthSpec extends Specification {
         }
       }
 
+
+      "should fail if the id and token not valid" in {
+        running(TestServer(3333)) {
+          val result = Http.postData("http://localhost:3333/auth", """{"id":"12","token":"data"}""")
+            .header("Content-Type", "application/json")
+            .header("Charset", "UTF-8")
+            .option(HttpOptions.readTimeout(10000))
+            .responseCode
+
+          result must be_==(403)
+        }
+
+      }
     
 /*    "work from within a browser" in {
         

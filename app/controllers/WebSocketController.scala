@@ -85,7 +85,7 @@ object WebSocketController extends Controller {
           )
         ))
       } else {
-        Unauthorized("Please long in first")
+        Forbidden("Please log in first")
       }
 
   }

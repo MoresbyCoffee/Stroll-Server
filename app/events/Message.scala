@@ -30,6 +30,8 @@ case class UserSettings(name : Option[String] = None,
 // location => loc
 // example: { "type" : "loc", "lng" : 1.1, "lat" : 1.1 }
 case class Location(coord : Coordinate) extends InputMessage
+// example: { "type" : "map", "coord" : { "lng" : 1.1, "lat": 1.1 }, "radius" : 0.01 }
+case class MapInfo(coord: Coordinate, radius: Double) extends InputMessage
 // disc
 // { "type" : "disc", "id" : "placeId", "payload" : "place secret" }
 case class Discovery(id : String, payload : String) extends InputMessage

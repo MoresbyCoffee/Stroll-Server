@@ -99,7 +99,7 @@
 
         function openWebsocket(sessionId, sessionToken) {
             websocket = new WebSocket("ws://" + document.location.host + "/ws/" + sessionId + "?sessionToken=" + sessionToken);
-                websocket.onopen = function(evt) {
+            websocket.onopen = function(evt) {
                     console.log("Connected to the server");
             };
             websocket.onmessage = function(evt) {
@@ -110,6 +110,9 @@
             };
             websocket.onclose = function(evt) {
                 console.log("DISCONNECTED");
+                delete websocket;
+                setTimeout(function() {openWebsocket(sessionId, sessionToken)}, 5000);
+
             }
         }
 
@@ -119,6 +122,23 @@
                     var msg = '{ "type" : "loc", "coord" : { "lng" : ' + lng + ', "lat" : ' + lat + '} }';
                     console.log("Message: " + msg);
                     websocket.send(msg);
+                }
+            }
+        }
+
+        function sendMapInfo(lng, lat, radius) {
+            if (typeof websocket != "undefined") {
+                if (websocket.readyState == 1) {
+                    var msg = {
+                        type : "map",
+                        coord : {
+                            lng : lng,
+                            lat : lat
+                        },
+                        radius : radius
+                    }
+                    console.log("Message: ", msg);
+                    websocket.send(JSON.stringify(msg));
                 }
             }
         }
@@ -150,7 +170,11 @@
             var x2 = rightBottom.lon;
             var y2 = rightBottom.lat;
 
+
+            var radius = Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
             console.log("X1 : " + x1 + " Y1: " + y1 + " X2: " + x2 + " Y2: " + y2 + " Center: " + center.lon + "," + center.lat);
+            sendMapInfo(center.lon, center.lat, radius);
+
         });
 
         //map.zoomToMaxExtent();
@@ -204,7 +228,7 @@
         function facebookStatusHelper(response) {
             if (response.status === 'connected') {
                 // connected
-                console.log("Connected");
+                console.log("Facebok authorized");
                 console.log(response);
 
 

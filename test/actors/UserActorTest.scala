@@ -53,7 +53,7 @@ class UserActorTest extends Specification {
       UserLocationEvent("userId", Coordinate(1.1, 1.1)) === eventActor.underlyingActor.messageList(0)
 
     }
-    "process UserLocation and send a PlaceRequest to the dal actor" in new AkkaTestkitSpecs2Support {
+    "process UserLocation and does not send a PlaceRequest to the dal actor" in new AkkaTestkitSpecs2Support {
       system.eventStream.subscribe(system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } })), classOf[UserLocationEvent])
 
       val dalActor = TestActorRef(new MemoryActor)
@@ -61,7 +61,18 @@ class UserActorTest extends Specification {
       val userActor = TestActorRef(new UserActor("userId", dalActor))
       userActor ! Location(Coordinate(1.1, 1.1))
 
-      PlaceRequest(Coordinate(1.1, 1.1), 1.0) === dalActor.underlyingActor.messageList(0)
+      dalActor.underlyingActor.messageList.isEmpty must beTrue
+
+    }
+
+    "process MapInfo and send a PlaceRequest to the dal actor" in new AkkaTestkitSpecs2Support {
+
+      val dalActor = TestActorRef(new MemoryActor)
+
+      val userActor = TestActorRef(new UserActor("userId", dalActor))
+      userActor ! MapInfo(Coordinate(1.21, 1.31), 4.23)
+
+      PlaceRequest(Coordinate(1.21, 1.31), 4.23) === dalActor.underlyingActor.messageList(0)
 
     }
     "process Place and send PlaceLocatoin to websocket" in {

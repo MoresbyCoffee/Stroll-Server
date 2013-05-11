@@ -19,18 +19,40 @@ package actors.websocket
 import org.specs2.mutable.Specification
 import actors.{MemoryActor, AkkaTestkitSpecs2Support}
 import akka.testkit.TestActorRef
-import events.PlaceLocation
+import events.{MapInfo, PlaceLocation}
 import common.Coordinate
 import play.api.libs.json._
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.iteratee.{Enumerator, Enumeratee, Iteratee, Concurrent}
 import scala.concurrent._
 import scala.concurrent.duration._
+import org.specs2.specification.Scope
 
 /**
  * Unit tests for [[actors.websocket.WebSocketActor]]
  */
 class WebSocketActorTest extends Specification {
+
+  abstract class WebSocketActorTestContext extends AkkaTestkitSpecs2Support with Scope {
+    //TODO make it working
+
+    //creatig actors
+    val userActor      = TestActorRef(new MemoryActor)
+    val webSocketActor = TestActorRef(new WebSocketActor(userActor, "sessionId", "sessionToken"))
+
+    val channelPromise = Promise[Channel[JsValue]]
+    val outputPromise  = Promise[JsValue]
+    val enumerator = Concurrent.unicast[JsValue]( onStart = { channelPromise success _ } )
+    enumerator(Iteratee.foreach[JsValue] { outputPromise success _ })
+
+    //Assigning channel
+    val channel : Channel[JsValue] = Await.result(channelPromise.future, DurationInt(15).seconds)
+    webSocketActor ! AppendChannel(channel)
+
+    override def after = super.after
+
+  }
+
 
   "WebSocketActor" should {
     "forward PlaceLocation messages to the client" in new AkkaTestkitSpecs2Support {
@@ -48,7 +70,6 @@ class WebSocketActorTest extends Specification {
       val channel : Channel[JsValue] = Await.result(channelPromise.future, DurationInt(15).seconds)
       webSocketActor ! AppendChannel(channel)
 
-
       //Test
       webSocketActor ! PlaceLocation("placeId", "Name of the place", Coordinate(12.33, 45.75))
       val output = Await.result(outputPromise.future, DurationInt(15).seconds)
@@ -61,6 +82,37 @@ class WebSocketActorTest extends Specification {
       (output \ "loc" \ "lat").as[Double] === 45.75
 
     }
+
+    "process MapInfo message and send to the userActor" in new AkkaTestkitSpecs2Support {
+
+      //creatig actors
+      val userActor      = TestActorRef(new MemoryActor)
+      val webSocketActor = TestActorRef(new WebSocketActor(userActor, "sessionId", "sessionToken"))
+
+      val channelPromise = Promise[Channel[JsValue]]
+      val outputPromise  = Promise[JsValue]
+      val enumerator = Concurrent.unicast[JsValue]( onStart = { channelPromise success _ } )
+      enumerator(Iteratee.foreach[JsValue] { outputPromise success _ })
+
+      //Assigning channel
+      val channel : Channel[JsValue] = Await.result(channelPromise.future, DurationInt(15).seconds)
+
+      val mapInfo = MapInfo(Coordinate(1.234, 14.343), 34.535)
+      val mapInfoJson = Json.obj(
+        "type" -> "map",
+        "coord" -> Json.obj(
+          "lng" -> 1.234,
+          "lat" -> 14.343
+        ),
+        "radius" -> 34.535
+      )
+
+
+      webSocketActor ! ClientMessage(mapInfoJson)
+
+      userActor.underlyingActor.messageList.head === mapInfo
+    }
+
     "forward UserLocation message to the client" in {
       todo
     }

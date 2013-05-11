@@ -87,6 +87,7 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
 
   implicit val coordinateRead     = Json.reads[Coordinate]
   implicit val locationRead       = Json.reads[Location]
+  implicit val mapInfoRead        = Json.reads[MapInfo]
   implicit val coordinateWrite    = Json.writes[Coordinate]
   implicit val userLocationWrite  = Json.writes[UserLocation]
   implicit val placeLocationWrite = new Writes[PlaceLocation] {
@@ -116,6 +117,7 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
   def parseMessage(jsValue : JsValue) : InputMessage = {
     (jsValue \ "type").as[String] match {
       case "loc" => jsValue.as[Location]
+      case "map" => jsValue.as[MapInfo]
       case typeString => println(s"Type is not supported: ${typeString}"); throw new IllegalArgumentException
     }
   }

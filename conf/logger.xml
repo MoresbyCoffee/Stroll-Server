@@ -6,9 +6,9 @@
     </encoder>
   </appender>
   <!-- you can also drop it completely -->
-  <!-- 
-  <logger name="se.scalablesolutions" level="DEBUG"/> 
-   -->
+
+  <logger name="reactivemongo" level="INFO"/>
+
   <root level="DEBUG">
     <appender-ref ref="stdout"/>
   </root>

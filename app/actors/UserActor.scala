@@ -21,6 +21,7 @@ import events._
 import scala.math._
 import actors.dal.{PlaceRequest, Place}
 import common._
+import play.api.Logger
 
 
 class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
@@ -77,13 +78,15 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
   }
 
   private def processInputEvent(event : InputMessage) {
+    Logger.debug(s"Client Event Arrived to User: ${event}")
     event match {
       case location : Location =>
-        println("Location arrived")
         lastLocation = Some(location.coord)
         val userLocation = new UserLocationEvent(id, location.coord)
-        val placeRequest = new PlaceRequest(location.coord, radius)
+        //val placeRequest = new PlaceRequest(location.coord, radius)
         context.system.eventStream.publish(userLocation)
+      case mapInfo : MapInfo =>
+        val placeRequest = new PlaceRequest(mapInfo.coord, mapInfo.radius)
         dalActor ! placeRequest
       case _ => println("Unprocessed something")
         sender ! ErrorMessage(s"Unexpected event: $event")

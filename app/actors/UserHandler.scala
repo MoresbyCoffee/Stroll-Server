@@ -16,20 +16,17 @@
  */
 package actors
 
-import akka.actor.Actor
 import akka.actor.ActorSystem
 import events._
-import scala.collection.mutable.{HashMap, SynchronizedMap}
 import akka.actor.Props
 import akka.actor.ActorRef
 import com.typesafe.config.ConfigFactory
 import org.moresbycoffee.facebook.Facebook._
 import actors.dal.Place
 import scala.Some
+import org.codehaus.jackson.map.ser.PropertyBuilder.EmptyArrayChecker
 
-class UserHandler(val actorSystem : ActorSystem, val dalActor : ActorRef) {
-
-  val userActors = new HashMap[String, ActorRef] with SynchronizedMap[String, ActorRef]
+class UserHandler(val actorSystem : ActorSystem) {
 
   /* Loading configuration */
   val config = ConfigFactory.load()
@@ -43,17 +40,13 @@ class UserHandler(val actorSystem : ActorSystem, val dalActor : ActorRef) {
 
   def getUser(id : String, token : String) : Option[ActorRef] = {
     if (checkUser(id, token)) {
-      Some(userActors.getOrElse(id, {
-        val actor = actorSystem.actorOf(Props(new UserActor(id, dalActor)))
-        actorSystem.eventStream.subscribe(actor, classOf[UserEvent])
-        actorSystem.eventStream.subscribe(actor, classOf[Place])
-        actor
-      }))
+      val actor = actorSystem.actorOf(Props(new UserActor(id)))
+      actorSystem.eventStream.subscribe(actor, classOf[UserEvent])
+      actorSystem.eventStream.subscribe(actor, classOf[Place])
+      Some(actor)
     } else {
       None
     }
-
-
   }
   
   private def checkFacebook(id : String, token : String) : Boolean = {

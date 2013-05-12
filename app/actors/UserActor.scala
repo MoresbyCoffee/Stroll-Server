@@ -24,9 +24,12 @@ import common._
 import play.api.Logger
 
 
-class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
+class UserActor(val id : String) extends Actor {
 
-  println(self.path)
+  val dalActor : ActorRef = context.actorFor("../dalActor")
+  println("Found dalActor:" + dalActor.getClass)
+
+  //TODO send "initUser" to dalActor.
 
   var name : String = "testUser"
   var lastLocation : Option[Coordinate] = None
@@ -35,11 +38,12 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
 
   def receive = {
     case inputMessage : InputMessage =>
+      Logger.debug("Receive inputMessage: " + inputMessage)
       processInputEvent(inputMessage)
       //TODO handle serviceEvents rather than RegisterActor only
     case RegisterActor(actor) =>
       websocketActor = Some(actor)
-      println("Web socket actor is registered")
+      Logger.debug("Web socket actor is registered")
     case Disconnect =>
       websocketActor = None
       lastLocation.foreach { ll =>
@@ -55,7 +59,7 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
         sendMessage(new UserLocation(msg.id, disc = Some(true)))
       })
     case place : Place =>
-      println("Arrived place:" + place)
+      Logger.debug("Arrived place:" + place)
       sendMessage(new PlaceLocation(place.id, place.name, place.loc))
   }
 
@@ -73,12 +77,11 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
   private def sendMessage(msg : OutputMessage) {
     websocketActor match {
       case Some(a) => a ! msg
-      case None => println(s"Message lost $msg") //TODO append the message to a queue
+      case None => Logger.warn(s"Message lost $msg") //TODO append the message to a queue
     }
   }
 
   private def processInputEvent(event : InputMessage) {
-    Logger.debug(s"Client Event Arrived to User: ${event}")
     event match {
       case location : Location =>
         lastLocation = Some(location.coord)
@@ -88,7 +91,7 @@ class UserActor(val id : String, val dalActor : ActorRef) extends Actor {
       case mapInfo : MapInfo =>
         val placeRequest = new PlaceRequest(mapInfo.coord, mapInfo.radius)
         dalActor ! placeRequest
-      case _ => println("Unprocessed something")
+      case _ => Logger.warn("Unprocessed something")
         sender ! ErrorMessage(s"Unexpected event: $event")
         //TODO handle all the possibilities
     }

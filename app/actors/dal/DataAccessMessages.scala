@@ -34,4 +34,11 @@ case class PlaceRequest(loc:Coordinate, distance:Double) extends DataAccessReque
 case class PlaceDetails(id:String, name:String, loc:Coordinate) extends DataAccessResponseMessage
 
 
+case class UserRequest(id: String) extends DataAccessRequestMessage
+case class UserDetails(id: String, name: String) extends DataAccessResponseMessage
+case class SaveNewUser(id: String, name: String) extends DataAccessRequestMessage
+
+case class UserLocation(id : String, loc: Coordinate) extends DataAccessRequestMessage
+
+
 

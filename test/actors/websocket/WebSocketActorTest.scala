@@ -47,7 +47,7 @@ class WebSocketActorTest extends Specification {
 
     //Assigning channel
     val channel : Channel[JsValue] = Await.result(channelPromise.future, DurationInt(15).seconds)
-    webSocketActor ! AppendChannel(channel)
+    webSocketActor ! AppendChannel("sessionId", channel)
 
     override def after = super.after
 
@@ -68,7 +68,7 @@ class WebSocketActorTest extends Specification {
 
       //Assigning channel
       val channel : Channel[JsValue] = Await.result(channelPromise.future, DurationInt(15).seconds)
-      webSocketActor ! AppendChannel(channel)
+      webSocketActor ! AppendChannel("sessionToken", channel)
 
       //Test
       webSocketActor ! PlaceLocation("placeId", "Name of the place", Coordinate(12.33, 45.75))
@@ -106,7 +106,6 @@ class WebSocketActorTest extends Specification {
         ),
         "radius" -> 34.535
       )
-
 
       webSocketActor ! ClientMessage(mapInfoJson)
 

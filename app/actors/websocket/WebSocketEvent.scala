@@ -25,7 +25,7 @@ import play.api.libs.json.JsValue
 sealed trait WebSocketEvent
 
 /** Service message - a channel is ready to use. */
-case class AppendChannel(channel : Channel[JsValue]) extends WebSocketEvent
+case class AppendChannel(sessionToken: String, channel: Channel[JsValue]) extends WebSocketEvent
 /** Service message - the client has disconnected, do not send messages. */
 case class ClientDisconnect() extends WebSocketEvent
 /** Service message - Error happened in the channel, do not send messages. */

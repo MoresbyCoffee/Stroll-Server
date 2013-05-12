@@ -19,10 +19,17 @@ package actors.websocket
 import play.api.libs.iteratee.Concurrent.Channel
 import akka.actor._
 import play.api.libs.json._
-import actors.UserHandler
 import events._
-import scala.Some
 import common.Coordinate
+import events.RegisterActor
+import events.ErrorMessage
+import events.Location
+import events.MapInfo
+import events.UserLocation
+import scala.Some
+import events.PlaceLocation
+import events.Disconnect
+import play.api.Logger
 
 /**
  * This actor is responsible to handle the JSON request
@@ -30,7 +37,7 @@ import common.Coordinate
  */
 class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessionToken : String) extends Actor {
 
-  var channel : Option[Channel[JsValue]] = None;
+  var channel   : Option[Channel[JsValue]] = None
 
   def receive = {
     /* Messages from the WebSocket (from the client) */
@@ -41,11 +48,11 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
         case Some(ch) =>
           ch.push(toMessage(out))
         case None =>
-          println("Lost message: ${out}") //TODO build queue and unregister actor (?) - carefully, because it's can be dangerous
+          Logger.warn(s"Lost message: $out") //TODO build queue and unregister actor (?) - carefully, because it's can be dangerous
       }
 
     //TODO case outputmessage: convert to Json
-    case a => println(s"unprocessed event ${a}")
+    case a => Logger.warn(s"unprocessed event $a")
   }
 
   /** Handles the WebSocket events.
@@ -54,34 +61,40 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
     *
     * @param webSocketEvent The - service or client - message from the WebSocket
     */
-  private def processWebSocketEvent(webSocketEvent : WebSocketEvent) = {
+  private def processWebSocketEvent(webSocketEvent : WebSocketEvent) {
     webSocketEvent match {
       /* Service Message handler */
-      case AppendChannel(ch) =>
-        channel = Some(ch)  //TODO run everything from the queue
-        userActor ! RegisterActor(self)
+      case AppendChannel(sessionTokenIn, ch) =>
+        if (sessionToken == sessionTokenIn) {
+          channel = Some(ch)
+          userActor ! RegisterActor(self)
+        } else {
+          //TODO send error
+          //TODO disconnect.
+        }
+
       case cd : ClientDisconnect =>
         userActor ! Disconnect
         context.stop(self)
       case ChannelError(jsValue) =>
         //TODO put back to the queue.
-        println(s"Channel error: Channel is set to None")
-        channel = None;
+        Logger.info(s"Channel error: Channel is set to None")
+        channel = None
         //TODO start timer and close this in 3 mins if there is no new message from the client.
 
       /* Client Message handler */
       case ClientMessage(jsValue) =>
-        println("JavaScript message arrived")
+        Logger.trace("JavaScript message arrived")
         /* parsing json message */
         val parsedMessage = parseMessage(jsValue)
-        println(s"ParsedMessage: ${parsedMessage}")
+        Logger.trace(s"ParsedMessage: $parsedMessage")
         /* processing client message */
         processInputMessage(parsedMessage)
     }
 
   }
 
-  private def processInputMessage(input : InputMessage) = {
+  private def processInputMessage(input : InputMessage) {
     userActor ! input
   }
 
@@ -118,7 +131,7 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
     (jsValue \ "type").as[String] match {
       case "loc" => jsValue.as[Location]
       case "map" => jsValue.as[MapInfo]
-      case typeString => println(s"Type is not supported: ${typeString}"); throw new IllegalArgumentException
+      case typeString => println(s"Type is not supported: $typeString"); throw new IllegalArgumentException
     }
   }
 

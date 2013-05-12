@@ -83,7 +83,7 @@ class DataAccessActor extends Actor {
 
   }
 
-  private[this] def getResponseHandler(fromPath : ActorPath) : (Place) => Unit = { place : Place => context.actorFor(fromPath) ! place }
+  private[this] def getResponseHandler[M](fromPath : ActorPath) : (M) => Unit = { msg : M => context.actorFor(fromPath) ! msg }
   
   override def postStop() {
     println("Closing DAL actor")

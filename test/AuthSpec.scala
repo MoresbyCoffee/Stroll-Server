@@ -45,48 +45,44 @@ class AuthSpec extends Specification {
 
   "Application" should {
 
-      "should authenticate" in {
-        running(TestServer(3333)) {
+    "should authenticate" in {
+      running(TestServer(3333)) {
 
-          val facebookUser = getPredefinedTestUser.get
-
-          println(s"^^^^^^^^^^^^^^^^^^^ facebookUser: $facebookUser")
-          println("User check: " + checkUser(facebookUser.id, facebookUser.access_token))
+        val facebookUser = getPredefinedTestUser.get
 
 
-          val result = Http.postData("http://localhost:3333/auth", s"""{"id":"${facebookUser.id}","token":"${facebookUser.access_token}"}""")
-            .header("Content-Type", "application/json")
-            .header("Charset", "UTF-8")
-            .option(HttpOptions.readTimeout(10000))
-            .asString
+        val result = Http.postData("http://localhost:3333/auth", s"""{"id":"${facebookUser.id}","token":"${facebookUser.access_token}"}""")
+          .header("Content-Type", "application/json")
+          .header("Charset", "UTF-8")
+          .option(HttpOptions.readTimeout(10000))
+          .asString
 
 
-          val jsonResult: JsValue = Json.parse(result)
+        val jsonResult: JsValue = Json.parse(result)
 
-          val sessionId    = (jsonResult \ "id").asOpt[String]
-          val sessionToken = (jsonResult \ "token").asOpt[String]
+        val sessionId    = (jsonResult \ "id").asOpt[String]
+        val sessionToken = (jsonResult \ "token").asOpt[String]
 
-          println("^^^^^^^^^^^^^^^^^^^ " + result);
+        println("^^^^^^^^^^^^^^^^^^^ " + result);
 
-          sessionId.isDefined must beTrue
-          sessionToken.isDefined must beTrue
-
-        }
-      }
-
-
-      "should fail if the id and token not valid" in {
-        running(TestServer(3333)) {
-          val result = Http.postData("http://localhost:3333/auth", """{"id":"12","token":"data"}""")
-            .header("Content-Type", "application/json")
-            .header("Charset", "UTF-8")
-            .option(HttpOptions.readTimeout(10000))
-            .responseCode
-
-          result must be_==(403)
-        }
+        sessionId.isDefined must beTrue
+        sessionToken.isDefined must beTrue
 
       }
+    }
+
+    "should fail if the id and token not valid" in {
+      running(TestServer(3333)) {
+        val result = Http.postData("http://localhost:3333/auth", """{"id":"12","token":"data"}""")
+          .header("Content-Type", "application/json")
+          .header("Charset", "UTF-8")
+          .option(HttpOptions.readTimeout(10000))
+          .responseCode
+
+        result must be_==(403)
+      }
+
+    }
     
 /*    "work from within a browser" in {
         

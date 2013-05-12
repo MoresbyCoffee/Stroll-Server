@@ -20,16 +20,13 @@ import akka.testkit.TestActorRef
 import events._
 import common._
 import org.specs2.mutable._
-import org.junit.runner.RunWith
 import akka.actor.Props
 import akka.actor.Actor
 import events.UserLocationEvent
-import org.specs2.runner.JUnitRunner
 import actors.dal.PlaceRequest
 
 
 /** Unit test of UserActor. */
-//@RunWith(classOf[JUnitRunner])
 class UserActorTest extends Specification {
   
   System.setProperty("MONGODB_URL", "localhost:12345")
@@ -45,20 +42,19 @@ class UserActorTest extends Specification {
       val eventActor = TestActorRef(new MemoryActor)
       system.eventStream.subscribe(eventActor, classOf[UserLocationEvent])
 
-      val dalActor = system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } }))
+      val dalActor = system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } }), "dalActor")
 
-      val userActor = TestActorRef(new UserActor("userId", dalActor))
+      val userActor = TestActorRef(new UserActor("userId"))
       userActor ! Location(Coordinate(1.1, 1.1))
 
       UserLocationEvent("userId", Coordinate(1.1, 1.1)) === eventActor.underlyingActor.messageList(0)
 
     }
     "process UserLocation and does not send a PlaceRequest to the dal actor" in new AkkaTestkitSpecs2Support {
-      system.eventStream.subscribe(system.actorOf(Props(new Actor() { def receive = { case msg => println(s"Message arrived: $msg") } })), classOf[UserLocationEvent])
 
-      val dalActor = TestActorRef(new MemoryActor)
+      val dalActor = TestActorRef(new MemoryActor, name = "dalActor")
 
-      val userActor = TestActorRef(new UserActor("userId", dalActor))
+      val userActor = TestActorRef(new UserActor("userId"))
       userActor ! Location(Coordinate(1.1, 1.1))
 
       dalActor.underlyingActor.messageList.isEmpty must beTrue
@@ -67,9 +63,9 @@ class UserActorTest extends Specification {
 
     "process MapInfo and send a PlaceRequest to the dal actor" in new AkkaTestkitSpecs2Support {
 
-      val dalActor = TestActorRef(new MemoryActor)
+      val dalActor = TestActorRef(new MemoryActor, name = "dalActor")
 
-      val userActor = TestActorRef(new UserActor("userId", dalActor))
+      val userActor = TestActorRef(new UserActor("userId"))
       userActor ! MapInfo(Coordinate(1.21, 1.31), 4.23)
 
       PlaceRequest(Coordinate(1.21, 1.31), 4.23) === dalActor.underlyingActor.messageList(0)

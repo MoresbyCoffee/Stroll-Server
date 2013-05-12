@@ -1,0 +1,5 @@
+use stroll
+db.places.insert( { "name" : "Burrells Wharf", "loc" : { "lng": -0.01987, "lat" : 51.48757  }} )
+db.places.insert( { "name" : "Great Eastern", "loc" : { "lng": -0.020535, "lat" : 51.48753  }} )
+db.places.insert( { "name" : "Cutty Shark", "loc" : { "lng": -0.009624, "lat" : 51.48294  }} )
+db.places.ensureIndex( { "loc" : "2d" } )

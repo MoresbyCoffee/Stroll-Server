@@ -22,7 +22,30 @@
         }
 
         #menubar {
-            display: none;
+            background-color: black;
+            bottom: 0;
+            display: block;
+            height: 40px;
+            margin: 0;
+            padding: 0;
+            position: fixed;
+            width: 100%;
+            z-index: 999;
+        }
+
+        #menubar ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        #menubar ul li {
+            float: left;
+            height: 40px;
+            width: 25%;
+            list-style: none;
+            margin: 0;
+            padding: 10px 0 0;
+            text-align: center;
         }
     </style>
 
@@ -137,6 +160,7 @@
 
         var markers = new OpenLayers.Layer.Markers( "Markers" );
         map.addLayer(markers);
+        map.zoomTo(14); //Default zoom level is 14
 
 
         var epsgProjection = new OpenLayers.Projection("EPSG:4326");
@@ -187,7 +211,7 @@
             markers.addMarker(myMarker);
 
 
-            map.setCenter(lonLat, 14 /* Zoom level */ );
+            map.setCenter(lonLat);
             sendLocation(longitude, latitude);
         }
 

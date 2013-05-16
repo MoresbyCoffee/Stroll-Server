@@ -49,7 +49,7 @@ class UserActor(val id : String) extends Actor {
       lastLocation.foreach { ll =>
         context.system.eventStream.publish(new DisconnectEvent(id, ll))
       }
-      //TODO start a timer to kill the actor if no request in 5 mins.
+      context.stop(self)
     case msg : UserLocationEvent =>
       ifInRange(msg.id, msg.coord, () => {
         sendMessage(new UserLocation(msg.id, Some(msg.coord)))

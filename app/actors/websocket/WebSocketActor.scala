@@ -30,6 +30,8 @@ import scala.Some
 import events.PlaceLocation
 import events.Disconnect
 import play.api.Logger
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * This actor is responsible to handle the JSON request
@@ -39,7 +41,17 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
 
   var channel   : Option[Channel[JsValue]] = None
 
+  private[this] case class UseCheck()
+  private[this] var used = false
+
   def receive = {
+    /* Messages from itself */
+    case UseCheck =>
+      if (used) {
+        used = false
+      } else {
+        shutdown()
+      }
     /* Messages from the WebSocket (from the client) */
     case wse : WebSocketEvent => processWebSocketEvent(wse)
     /* Messages from the Business Logic */
@@ -55,6 +67,12 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
     case a => Logger.warn(s"unprocessed event $a")
   }
 
+  /** Shuts down the actor and sends .... event to the underlying user actor to stop itself. */
+  private[this] def shutdown() {
+    context.stop(userActor)
+    context.stop(self)
+  }
+
   /** Handles the WebSocket events.
     * All the messages arriving from the WebSocket - even the client messages -
     * wrapped into a [[actors.websocket.WebSocketEvent]].
@@ -65,6 +83,7 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
     webSocketEvent match {
       /* Service Message handler */
       case AppendChannel(sessionTokenIn, ch) =>
+        used = true
         if (sessionToken == sessionTokenIn) {
           channel = Some(ch)
           userActor ! RegisterActor(self)
@@ -75,7 +94,8 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
 
       case cd : ClientDisconnect =>
         userActor ! Disconnect
-        context.stop(self)
+        used = false
+        context.system.scheduler.scheduleOnce(5 minutes, self, UseCheck)
       case ChannelError(jsValue) =>
         //TODO put back to the queue.
         Logger.info(s"Channel error: Channel is set to None")
@@ -84,6 +104,7 @@ class WebSocketActor(val userActor : ActorRef, val sessionId : String, val sessi
 
       /* Client Message handler */
       case ClientMessage(jsValue) =>
+        used = true
         Logger.trace("JavaScript message arrived")
         /* parsing json message */
         val parsedMessage = parseMessage(jsValue)

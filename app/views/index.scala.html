@@ -1,5 +1,7 @@
 @(message: String)
 
+@import play.api.Play._
+
 @main("Moresby Stroll") {
 
     <style type="text/css">
@@ -95,25 +97,6 @@
 */
             }
 
-        }
-
-        function openWebsocket(sessionId, sessionToken) {
-            websocket = new WebSocket("ws://" + document.location.host + "/ws/" + sessionId + "?sessionToken=" + sessionToken);
-            websocket.onopen = function(evt) {
-                    console.log("Connected to the server");
-            };
-            websocket.onmessage = function(evt) {
-                processServerMessage(evt.data);
-            };
-            websocket.onerror = function(evt) {
-                console.error("Error!!!" + evt.data);
-            };
-            websocket.onclose = function(evt) {
-                console.log("DISCONNECTED");
-                delete websocket;
-                setTimeout(function() {openWebsocket(sessionId, sessionToken)}, 5000);
-
-            }
         }
 
         function sendLocation(lng, lat) {
@@ -213,8 +196,8 @@
         // Additional JS functions here
         window.fbAsyncInit = function() {
             FB.init({
-                appId      : '600170073327896', // App ID
-                channelUrl : '//localhost/assets/channel.html', // Channel File
+                appId      : '@(configuration.getString("facebook.app_id").getOrElse(""))', // App ID
+                channelUrl : '//' + document.location.host + '/assets/channel.html', // Channel File
                 status     : true, // check login status
                 cookie     : true, // enable cookies to allow the server to access the session
                 xfbml      : true  // parse XFBML
@@ -272,7 +255,6 @@
             });
         }
 
-
         function openWebsocket(sessionId, sessionToken) {
             websocket = new WebSocket("ws://" + document.location.host + "/ws/" + sessionId + "?sessionToken=" + sessionToken);
             websocket.onopen = function(evt) {
@@ -281,11 +263,15 @@
             websocket.onmessage = function(evt) {
                 processServerMessage(evt.data);
             };
-                websocket.onerror = function(evt) {
+            websocket.onerror = function(evt) {
                 console.error("Error!!!" + evt.data);
             };
-                websocket.onclose = function(evt) {
+            websocket.onclose = function(evt) {
                 console.log("DISCONNECTED");
+                delete websocket;
+                if (!closing) {
+                    setTimeout(function() {openWebsocket(sessionId, sessionToken)}, 5000);
+                }
             }
         }
 
@@ -298,6 +284,12 @@
             ref.parentNode.insertBefore(js, ref);
         }(document));
 
+
+        /* Checking window status */
+        var closing = false;
+        window.addEventListener("beforeunload", function() {
+            closing = true;
+        });
 
         /* Checking network status */
         var online = navigator.onLine

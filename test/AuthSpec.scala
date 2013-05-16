@@ -48,7 +48,7 @@ class AuthSpec extends Specification {
     "should authenticate" in {
       running(TestServer(3333)) {
 
-        val facebookUser = getPredefinedTestUser.get
+        val facebookUser = getTestUser.get
 
 
         val result = Http.postData("http://localhost:3333/auth", s"""{"id":"${facebookUser.id}","token":"${facebookUser.access_token}"}""")
